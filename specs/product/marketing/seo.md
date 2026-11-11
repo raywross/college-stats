@@ -84,7 +84,8 @@ the templates.
 
 ### Templates
 
-A table of **page types** with an editable title template and description template each, stored in `seo_templates`
+A table of **page types** with an editable title template, description template, and (for the data page types) an
+**answer** template, the one-sentence first paragraph described under [Assistants and AI search](#assistants-and-ai-search), stored in `seo_templates`
 (one row per page type: `school`, `school-admissions`, `school-cost`, `school-outcomes`, `school-academics`,
 `school-students`, `school-history`, `school-events`, `high-school`, `trend`, `state`, `conference`, `glossary`,
 `release-note`, `home`, `explore`, `compare`, `landing-parents`, `landing-students`, `landing-counselors`, `pricing`,
@@ -155,6 +156,7 @@ recommendation and, where it can, a proposed fix the admin approves:
 | Internal links to a path that 404s (sampled from the sitemap, 500 pages a week) | "17 links to a retired page" | The redirect, if the target is known (a merged college) |
 | Sitemap URL count differs from the dataset's count | "The sitemap lists 1,891 colleges; the snapshot has 1,893" | Regenerate |
 | A page emits no JSON-LD or a type that fails validation | "Trend pages lost their Dataset markup" | Flagged (a code regression) |
+| An indexable data page renders no answer line, or one without a year and a source ([Assistants and AI search](#assistants-and-ai-search)) | "140 cost pages open with no answer line" | The template, if a clause is at fault; otherwise flagged |
 | Core Web Vitals (Speed Insights API) worsened past the thresholds for a route | "LCP on /schools/{id}/cost rose to 3.1 s" | Flagged |
 | Search Console reports a manual action or a security issue | "Search Console: manual action" | Flagged, red |
 | A crawler blocked by the switches is still hitting the site hard (from Vercel's logs, when available) | informational | |
@@ -184,12 +186,66 @@ something):
 
 Not done: paid links, guest posts, "best colleges for X" ranking lists (we publish no rankings), or AI-written filler.
 
+## Assistants and AI search
+
+Added 2026-11-09 after the owner asked how Quad shows up in ChatGPT and the other assistants people now search with.
+It is a different game from ranking, and Quad is well placed for it.
+
+**How an assistant chooses what to cite.** None of them answers a college question from memory alone any more. Asked
+"what is Tufts' acceptance rate", the assistant runs a web search, reads the top handful of pages, and writes an answer
+with citations. Three filters, in order:
+
+1. **A search index.** ChatGPT's search rides Bing's index and its own crawler; Perplexity runs its own crawler over
+   a Bing-shaped index; Google's AI Overviews and AI Mode read Google's index; Claude uses a search partner plus its
+   own crawler. Being indexed well by **Bing** matters here as much as Google, which is why IndexNow (Bing's
+   instant-notification protocol) and Bing Webmaster Tools are in this spec and not optional.
+2. **The assistant's own crawler.** Each has a named bot (OAI-SearchBot and ChatGPT-User, PerplexityBot, ClaudeBot and
+   Claude-SearchBot, Google-Extended for Gemini). A `robots.txt` that blocks it means the assistant cannot read the page
+   and cites someone else. The [Crawlers](#crawlers) switches' default allows the answer-bots on the public data pages;
+   the recommendation to the owner (plan.md decision 2) is to keep that and to allow the training bots on the same
+   pages, since nothing proprietary renders there (the estimate's method never does) and a model that learned the site
+   exists is a model that reaches for it.
+3. **What the model quotes** once it has read five or six pages: the page that states the answer in one clear
+   sentence near the top, with the number, the year, and the source, because that is what it can lift and cite; the
+   page that covers the question fully, so it needs no second source; the page with a visible date. Our pages have the
+   substance; this gives them the shape.
+
+**What this spec adds for it.**
+
+- **The answer line.** Every college topic page (and the high-school, trend, state, and conference pages) opens with
+  one sentence that states the page's main fact with its year and source, rendered from an `answer` template per page
+  type beside the title and description templates ([Templates](#templates)), filled from the same placeholders, with
+  the same clause-dropping when a value is missing: "Tufts University admitted 10% of applicants in fall 2024
+  (IPEDS), with SAT scores from 1460 to 1540 in the middle half." It is the first `<p>` on the page, the fallback
+  description, and the `description` of the page's JSON-LD. The Steward's [SEO audit](#the-stewards-seo-audit) adds a
+  check: an answer line present and non-empty on every indexable page of those types.
+- **Bing verification now, not later.** Owner step 1 already names Bing Webmaster Tools; the Bing API for the Search
+  performance panel stays a later unit, but the sitemap is submitted to Bing on day one and IndexNow pings go from
+  the first publish.
+- **An Assistants referrer group.** Sessions that arrive from `chatgpt.com`, `chat.openai.com`, `perplexity.ai`,
+  `claude.ai`, `gemini.google.com`, `copilot.microsoft.com`, and `you.com` are grouped as **Assistants** in the Search
+  screen's performance panel and the Growth overview, from PostHog's referrer (`lib/seo/referrers.ts`, a fixed list).
+  Google does not separate AI Overview impressions in Search Console, so this is the only count we get, and it is a
+  floor: an assistant that answers without a click leaves nothing to count.
+- **The connector, where people can see it.** Quad is already a tool inside ChatGPT, Claude, and Gemini
+  ([../assistants.md](../assistants.md)): the keyless MCP server, the `/connect` page, the skill file. A family that
+  adds it gets Quad's numbers cited for every college question they ask, with no search step and no competitor in the
+  result, which is a stronger position than winning a citation. The three landing pages carry a fixed **"Ask your
+  assistant with Quad's numbers"** block linking to `/connect` ([console.md](console.md#pages)), with a
+  `connect_opened` event ([measurement.md](measurement.md#new-events)); an ad message built on it waits in the plan's
+  [Layered in later](plan.md#layered-in-later) table with its trigger.
+- **Not now: `llms.txt`.** Proposed, adopted by no major assistant as of November 2026; it costs nothing to add later
+  if one starts reading it, and the answer lines do the same job on the pages themselves.
+
+An honest limit: an assistant shows one to three citations per answer and the user often never clicks. Being cited
+builds the name and sends fewer visitors than a top organic result; the connector is how a citation becomes use.
+
 ## Files (planned)
 
 - Code: `app/sitemap.ts`, `app/robots.ts`, `app/**/opengraph-image.tsx` (college family, trends, default),
   `lib/seo/templates.ts` (fill, clause dropping, truncation; reads `seo_templates` with a cached, defaulted read),
   `lib/seo/placeholders.ts`, `lib/seo/structured-data.ts`, `lib/seo/indexnow.ts`, `lib/seo/search-console.ts`,
-  `lib/seo/questions.ts`, `app/compare/[pair]/page.tsx`, `app/api/cron/search-console-pull/route.ts`,
+  `lib/seo/questions.ts`, `lib/seo/referrers.ts` (the Assistants group), `app/compare/[pair]/page.tsx`, `app/api/cron/search-console-pull/route.ts`,
   `app/api/cron/seo-audit/route.ts`, `lib/steward/seo-checks.ts`.
 - Console: `app/admin/growth/search/page.tsx`, `app/admin/growth/search/templates/page.tsx` and its actions,
   `lib/admin/seo-*.ts`, help entries in `lib/admin/help.ts`.
@@ -197,7 +253,9 @@ Not done: paid links, guest posts, "best colleges for X" ranking lists (we publi
   `app_settings` rows `seo.crawlers`, `seo.dashboards`.
 - Env: `GOOGLE_SEARCH_CONSOLE_CREDENTIALS`, `SEARCH_CONSOLE_SITE_URL`, `INDEXNOW_KEY`.
 - Tests: `tests/seo-templates.test.mts` (every placeholder of every page type fills from a fixture college; a missing
-  value drops its clause; the longest name stays under the limits; an override wins), `tests/sitemap.test.mts` (every
+  value drops its clause; the longest name stays under the limits; an override wins; the answer line of every data
+  page type renders as one sentence with a year and a source from the fixture, and is empty rather than broken when
+  the main fact is missing), `tests/sitemap.test.mts` (every
   public route family appears; nothing signed in does; counts match the fixture snapshot), `tests/robots.test.mts`
   (the rendered file from each switch state; Googlebot never blocked; the safe default when settings are unreadable),
   `tests/structured-data.test.mts` (each type validates; no student field can appear), `tests/seo-audit.test.mts`
@@ -215,5 +273,6 @@ Not done: paid links, guest posts, "best colleges for X" ranking lists (we publi
 1. **Dynamic Open Graph images at scale:** 1,893 × 8 images rendered on demand are fine under the CDN; if the render
    cost shows in the function bill, pre-render the college family at publish time into Storage instead.
 2. **Bing Webmaster API** as a second source for the Search performance panel: later, once Google's is useful.
+   Verification and the sitemap submission to Bing are day one regardless ([Assistants and AI search](#assistants-and-ai-search)).
 3. **Hreflang and Spanish pages:** not in this plan; a Spanish-language `/es/` version of the landing pages and the
    glossary would be a real draw for many families and is noted for a later spec.

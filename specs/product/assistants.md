@@ -4,7 +4,8 @@
 > skill to ChatGPT, Claude, and Gemini, specific instructions for each"), and **merged 2026-10-21** with the keyed Data
 > API and MCP server ([data-api.md](data-api.md)), built the same day in another chat. Part of [product](README.md).
 > This document covers what the assistants' menus need: the keyless address, the skill file, and `/connect`. The
-> server, its tools, keys, and the REST API are data-api.md's.
+> server, its tools, keys, and the REST API are data-api.md's. How the connector is put in front of families, and how
+> Quad gets cited by assistants that have not connected it, is in [marketing/seo.md](marketing/seo.md#assistants-and-ai-search) (2026-11-09).
 
 ## Goal
 A family that uses an assistant can ask it about colleges and get Quad's numbers with Quad's citations, not the

@@ -80,6 +80,7 @@ booleans; no free text; the denied-token test gains nothing because `campaign`, 
 | `household_invite_sent` (server) | `by`: student / guardian; `campaign` | The household invitation action | The student campaign's conversion |
 | `trial_started`, `trial_converted`, `trial_cancelled`, `subscription_cancelled`, `subscription_renewed` (server) | `product`: student / family; `campaign`; `price_variant` (the variant key, or `list`; never an amount beyond the published prices) | [commercialization.md](../commercialization.md), when built; the names there are kept and gain `campaign` and `price_variant` | The money funnel, by campaign and by price ([commercialization.md](../commercialization.md#price-tests-owner-2026-11-09)) |
 | `share_created` | `kind`: list / compare / trend; `channel`: link / x / facebook / copy | The share buttons ([console.md](console.md#sharing)) | Word of mouth, counted |
+| `connect_opened` | `page`: parents / students / counselors / connect; `assistant`: chatgpt / claude / gemini / other | The "Ask your assistant with Quad's numbers" block on the landing pages and the steps on `/connect` ([seo.md](seo.md#assistants-and-ai-search)) | Whether people take Quad into their assistant; the trigger for the connector message in [plan.md](plan.md#layered-in-later) |
 
 `campaign` is a registered property name on every event that carries it, and its value is always a code the console
 issued or one of the fixed `organic:*` values; a test holds the set of values in fixtures to that rule.

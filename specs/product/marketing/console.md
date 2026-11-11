@@ -85,7 +85,9 @@ Each page (`/for/parents`, `/for/students`, `/for/counselors`, and the words on 
 the product frames (the same components and the same `sample-plan.json` fixture as the splash page in
 [advisor.md](../advisor.md#3-the-page-advisor-signed-out), so the page cannot drift from the product); the console
 owns the headline, the sentence under it, each section's one line, the Questions section (a list of question and
-answer pairs, which also feeds the page's `FAQPage` markup), and the button labels. A preview renders the page with
+answer pairs, which also feeds the page's `FAQPage` markup), the one sentence of the fixed **"Ask your assistant with
+Quad's numbers"** block (which links to `/connect` and sends `connect_opened`;
+[seo.md](seo.md#assistants-and-ai-search)), and the button labels. A preview renders the page with
 the draft blocks; **Publish** writes them and revalidates the page. Drafts are kept per page, so the owner can prepare
 the spring words in February and publish them in March.
 
@@ -328,7 +330,7 @@ anything unbuilt; wave 4 waits for Stripe and the trial ([commercialization.md](
 | 1c Open Graph, structured data, the image renderer | `opengraph-image.tsx` for the college family, trends, and the default; `lib/seo/structured-data.ts` and the JSON-LD on each page type; the renderer generalized so the creative library can ask for ad sizes | Medium | Sonnet |
 | 1d Attribution | `/go/{code}`, the cookie in `proxy.ts`, `acquired_via`, the new events, the privacy paragraph, `marketing_links` and `marketing_link_opens` | Medium | Opus (touches auth) |
 | 1e Growth door, Overview, Campaigns | The door and tab, `marketing_campaigns`, the link builder with QR, `lib/marketing/posthog.ts`, `marketing-pull`, `marketing_daily`, the Overview reading `db` counts and PostHog | Large | Opus |
-| 1f Landing pages | `/for/parents`, `/for/students`, `/for/counselors` from the splash page's components, `marketing_pages` and the Pages editor with drafts, `FAQPage` from Questions, `landing_*` events | Large | Opus |
+| 1f Landing pages | `/for/parents`, `/for/students`, `/for/counselors` from the splash page's components, `marketing_pages` and the Pages editor with drafts, `FAQPage` from Questions, the connector block, `landing_*` and `connect_opened` events | Large | Opus |
 | 1g QA | Phone at 390 px, help keys, `npm run verify`, Lighthouse SEO score on five page types, a shared-card check | | Sonnet |
 
 ### Wave 2: the ad platforms (December 2026)

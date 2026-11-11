@@ -3,7 +3,7 @@
 > Written 2026-11-11 after the owner saw an Instagram post with UT Austin's Fall 2026 numbers (98,841 applicants,
 > up 9%; 9,487 freshmen) while the site showed Fall 2025. Part of [college-reported-data.md](college-reported-data.md);
 > changes the rules in [college-reported-round-3.md](college-reported-round-3.md) Decisions 6, 7 and 10. Owner
-> decisions open (end of this page).
+> decisions taken 2026-11-11 (end of this page); build started the same day on `feature/fall-figures`.
 > Status: **planned**
 
 ## The question
@@ -133,10 +133,15 @@ The extraction schema gains a qualifier per figure:
 | Qualifier | Example | Stored as | Shown as |
 |---|---|---|---|
 | `exact` | "82,118 applications" | the value | 82,118 |
-| `approx` | "more than 82,000", "nearly 109,000", "about 10%" | the value with `approx: true` | "82,000+" / "about 10%", never an exact rate from it |
-| `target` | "class goal of 4,100", "target class of 3,988" | not stored as `enrolled`; kept in the notice as `enrollment_target` | not on the funnel; the next-steps copy may say "aims for about 4,100" |
-| `deposits` | "6,682 first-year deposits" | `deposits`, a separate field | "6,682 deposits (July)"; replaced by the census count when published |
+| `approx` | "more than 82,000", "nearly 109,000", "about 10%" | the value with `approx: true` | "82,000+" / "about 10%" on the funnel, with its sign; never an exact rate from it |
+| `target` | "class goal of 4,100", "target class of 3,988" | `enrollment_target`, never `enrolled` | A labeled row under the funnel: "Class goal: about 4,100" |
+| `deposits` | "6,682 first-year deposits" | `deposits`, a separate field | A labeled row: "6,682 deposits (July)"; replaced by the census count when published |
 | `multi-campus` | "12,552 new students across three campuses" | rejected: scope check fails | nothing |
+
+**Only exact counts feed the selectivity tier** (owner, 2026-11-11). The tier and its in-state and out-of-state
+variants are computed from a term's funnel only when every count they use is exact (a CDS, federal data, or exact
+notice figures); an approximate applicant count shows on the page but leaves the tier on the last exact term.
+Targets and deposits never enter any computation.
 
 Check #2 (the number appears in the quote) applies to the stated number ("82,000" must be in the quote); the
 qualifier is the model's call and is itself a reviewed item: a run where `approx` exceeds 40% of extracted figures
@@ -191,8 +196,9 @@ the recipe and the archive; their lineage records stay on the history rows they 
 term, by qualifier, so we learn whether "more than 82,000" means 82,0xx or 84,000.
 
 ### Decision 9: what is never a source
-- Student newspapers (the Crimson, the Cornell Sun, the Cavalier Daily, the Huntington News), alumni magazines not
-  run by the news office (Harvard Magazine), and third-party sites, however exact their numbers look.
+- Student newspapers (the Crimson, the Cornell Sun, the Cavalier Daily, the Huntington News) and third-party sites,
+  however exact their numbers look. A publication the university itself runs (Harvard Magazine, the Gazette, a
+  provost's update, a counselor newsletter) is a source (owner, 2026-11-11), cited as that publication.
 - A figure for a different cohort (transfers, all undergraduates, a system total) or for a class the page does not
   name.
 - A figure from a page whose host is not the college's: the UC fact sheet is the one exception, taken as a
@@ -225,10 +231,11 @@ federal year arrives.
 4. **System sheets**: UC; the other systems checked once.
 5. **Accuracy**: the notice-vs-CDS comparison when the 2026–27 editions land (spring 2027).
 
-## Owner decisions
-1. Scope: the top four tiers (521 colleges, ~$150 a year) or the top three (193, ~$60)?
-2. Show approximate figures on the profile ("82,000+ applied"), or hold them until an exact count or the CDS?
-3. Targets and deposits: never on the funnel (this page's rule), or shown with their label?
-4. Affiliated publications run by the university but not its news office (Harvard Magazine, Harvard Gazette is the
-   news office): this page excludes them; a per-host allowlist could admit them one by one.
-5. Run the census catch-up now, before the seasons are built, so Fall 2026 shows this cycle?
+## Owner decisions (2026-11-11)
+1. **Scope: the top four tiers** (521 colleges, ~$150 a year).
+2. **Approximate figures show** on the profile ("82,000+ applied"); only exact counts feed the selectivity ranking
+   (Decision 3).
+3. **Targets and deposits are shown, with their label**, never as the enrolled count (Decision 3).
+4. **Any publication the university runs is a source** (Decision 9); student newspapers and third parties still are
+   not.
+5. **Run the census catch-up now**, in the build, so Fall 2026 shows this cycle.

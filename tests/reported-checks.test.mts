@@ -134,6 +134,29 @@ test("check 7: two sources for the same term must agree within 1%", () => {
   assert.deepEqual(runChecks(goodExtraction(), school(), [otherTerm]), []);
 });
 
+test("check 7: a source for a different pool (scope or cohort) is never compared", () => {
+  // Vanderbilt, 2026-11-10: the CDS counts the whole cycle; the "regular decision summary" counts one round.
+  const regularOnly: Extraction = { ...goodExtraction(), scope: "regular-only", applicants: 43322, admitted: 1411 };
+  assert.deepEqual(runChecks(goodExtraction(), school(), [regularOnly]), []);
+  const unknownScope: Extraction = { ...goodExtraction(), scope: "unknown", applicants: 999999 };
+  assert.deepEqual(runChecks(goodExtraction(), school(), [unknownScope]), []);
+  const transfers: Extraction = { ...goodExtraction(), cohort: "transfer", applicants: 999999 };
+  assert.deepEqual(runChecks(goodExtraction(), school(), [transfers]), []);
+});
+
+test("check 7: rates are compared at the precision they were printed", () => {
+  const base = goodExtraction();
+  // This source computes its rate from counts: 2,040 ÷ 46,618 = 4.38%.
+  const precise: Extraction = { ...base, admitted: 2040, acceptance_rate: null, quotes: { ...base.quotes, admitted: "The university admitted 2,040 students.", acceptance_rate: undefined } };
+  // The other source states only a whole-percent rate: anything within half a point agrees.
+  const rounded: Extraction = { ...base, applicants: null, admitted: null, enrolled: null, acceptance_rate: 0.04, quotes: { acceptance_rate: "admitted 4% of applicants" } };
+  assert.deepEqual(runChecks(precise, school(), [rounded]), []);
+  // Beyond the printed precision it is a disagreement.
+  const far: Extraction = { ...rounded, acceptance_rate: 0.052, quotes: { acceptance_rate: "an admit rate of 5.2%" } };
+  const failures = runChecks(precise, school(), [far]);
+  assert.ok(failures.some((f) => f.check === "sources-agree" && f.detail.includes("acceptance_rate")), JSON.stringify(failures));
+});
+
 /* ---- toReportedEntry / reportedToPatch ---- */
 
 test("toReportedEntry builds lineage that passes validateSchool once merged", () => {

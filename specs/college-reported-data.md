@@ -104,7 +104,10 @@ and the extraction result.
 5. Entering term is newer than the college's federal admissions year.
 6. Plausible change vs the latest federal year: applicants within ×0.5–×2, admit rate within ±15 pts (or ±50% relative
    for rates under 10%). Outside → review.
-7. If two sources give the same term (CDS vs class profile), they agree within 1%; otherwise → review.
+7. If two sources give the same term, cohort, and scope (a CDS and a whole-cycle class profile), they agree: counts
+   within 1%, the rate within the precision it was printed at (as in check 4); otherwise → review. A source for a
+   different pool (a regular-decision-only summary, an unknown scope, transfers) is never compared: its numbers are
+   not a disagreement, and check 1 already keeps it from being published.
 
 ### Publishing
 - A GitHub Action runs the pipeline and opens a PR that changes `data/college-reported.json` (one college per line)

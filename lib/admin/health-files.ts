@@ -21,7 +21,7 @@ import { CAMPUS_LINEAGE_KEYS, CORE_FEDERAL_FIELDS, IDENTITY_LINEAGE_PREFIXES, ed
 
 /** One document from the manifest, joined with what was read from it. */
 export interface ReportedDoc {
-  kind: "cds" | "class-profile";
+  kind: "cds" | "class-profile" | "notice";
   /** "2025-26"; null when none was detected. */
   edition: string | null;
   type: string;
@@ -102,7 +102,7 @@ export interface ManifestDocLite {
   sha256: string;
   unit_id: string;
   url: string;
-  kind: "cds" | "class-profile";
+  kind: "cds" | "class-profile" | "notice";
   type: string;
   edition: string | null;
   retrieved: string;

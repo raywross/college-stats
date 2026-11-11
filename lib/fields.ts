@@ -413,6 +413,11 @@ export const FIELDS = {
   "reported.admissions.enrolled": reported("Enrolled (college-reported)"),
   "reported.admissions.acceptance_rate": reported("Acceptance rate (college-reported)"),
   "reported.admissions.source_kind": reported("Kind of document (college-reported)"),
+  // Announced, never computed with (specs/college-reported-fall-figures.md Decision 3): shown with their label.
+  "reported.admissions.enrollment_target": reported("Announced class goal (college-reported)"),
+  "reported.admissions.deposits": reported("First-year deposits (college-reported)"),
+  // Which of the figures above the college printed as rounded ("more than 82,000"); cites the first such figure's document.
+  "reported.admissions.approx": reported("Figures the college printed as approximate (college-reported)"),
   // CDS C1 by residency (specs/data-expansion/cds-residency-admissions.md; lib/cds/residency.ts): one lineage record
   // per stored leaf, from the newest passed grid.
   "reported.admissions_by_residency.entering_term": reported("Entering class of the residency grid (college-reported)"),

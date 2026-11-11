@@ -47,6 +47,9 @@ function goodExtraction(): Extraction {
     admitted: 1865,
     enrolled: 1500,
     acceptance_rate: 0.04,
+    qualifiers: {},
+    enrollment_target: null,
+    deposits: null,
     quotes: {
       applicants: "Princeton received 46,618 applications for the Class of 2030.",
       admitted: "The university admitted 1,865 students.",

@@ -67,12 +67,12 @@ test("the recorded cases: a failed run, a slow run, an idle run on a working day
   }
 });
 
-test("the collect firing is housekeeping; the Monday run beside it at 13:00 is the headline one", () => {
+test("the collect firing is housekeeping; the Monday run beside it at 13:17 is the headline one", () => {
   const cr = job("college-reported");
   assert.equal(firingOf(cr, fixture("4-collect-nothing").run), "housekeeping");
   assert.equal(firingOf(cr, fixture("1-failed").run), "headline");
-  // A Monday at 13:00 in December is out of the Monday schedule's season: it stops at once, and that is right.
-  const offSeason: RunView = { ref: "1", trigger: "schedule", status: "ok", startedAt: "2026-12-07T13:00:30Z", finishedAt: "2026-12-07T13:01:00Z", steps: [{ name: "Run the ingestion pipeline", conclusion: "skipped" }], changeSets: [] };
+  // A Monday at 13:17 in December is out of the Monday schedule's season: it stops at once, and that is right.
+  const offSeason: RunView = { ref: "1", trigger: "schedule", status: "ok", startedAt: "2026-12-07T13:17:30Z", finishedAt: "2026-12-07T13:18:00Z", steps: [{ name: "Run the ingestion pipeline", conclusion: "skipped" }], changeSets: [] };
   assert.equal(firingOf(cr, offSeason), "off-season");
   const r = reviewRun(cr, offSeason);
   assert.equal(r.verdict, "fine");
@@ -339,7 +339,7 @@ test("review mode: the repairable failure is restarted once; the second failure 
 test("review mode: a housekeeping firing that looked fine is not written; a non-repairable failure is a finding with no tool called", async () => {
   const { store } = await freshStore();
   const tools = recordingTools();
-  const idle = await runSteward({ mode: "review", store, job: "college-reported", runFile: fixture("4-collect-nothing"), tools, runRef: "rev-c", dryRun: ANSWERS, now: at("2026-11-04T13:35:00Z"), env: {}, log: () => {} });
+  const idle = await runSteward({ mode: "review", store, job: "college-reported", runFile: fixture("4-collect-nothing"), tools, runRef: "rev-c", dryRun: ANSWERS, now: at("2026-11-04T13:40:00Z"), env: {}, log: () => {} });
   assert.equal(idle.exit, 0);
   assert.equal(idle.changeSet, null);
   assert.equal((await store.read(COLLECTIONS.steward.reviews)).size, 0);

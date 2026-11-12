@@ -1,9 +1,9 @@
 {
-  "key": "c499b3053a452270",
+  "key": "7891afa256b7d2db",
   "model": "claude-haiku-4-5-20251001",
   "note": "review note, 1-failed (written for the fixture, not recorded)",
   "response": {
-    "id": "msg_dry_c499b3053a452270",
+    "id": "msg_dry_7891afa256b7d2db",
     "type": "message",
     "role": "assistant",
     "model": "claude-haiku-4-5-20251001",

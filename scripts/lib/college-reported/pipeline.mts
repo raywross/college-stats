@@ -337,7 +337,7 @@ export function createPipeline(deps: PipelineDeps) {
           for (const k of ["applicants", "admitted", "enrolled"] as const) {
             if (c1[k] !== null) quotes[k] = `C1 Total first-time, first-year students who ${label[k]}: ${fmt(c1[k]!)}`;
           }
-          const extraction: Extraction = { cohort: "first-year", scope: "all-rounds", entering_term: term, applicants: c1.applicants, admitted: c1.admitted, enrolled: c1.enrolled, acceptance_rate: null, quotes, page: null };
+          const extraction: Extraction = { cohort: "first-year", scope: "all-rounds", entering_term: term, applicants: c1.applicants, admitted: c1.admitted, enrolled: c1.enrolled, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, quotes, page: null };
           return { extraction };
         }
         const text = sheetText(book.get("CDS-C")) || [...book.values()].map(sheetText).join("\n\n");
@@ -482,7 +482,7 @@ export function createPipeline(deps: PipelineDeps) {
       return null;
     }
 
-    const emptyExtraction = (): Extraction => ({ cohort: "unknown", scope: "unknown", entering_term: null, applicants: null, admitted: null, enrolled: null, acceptance_rate: null, quotes: {}, page: null });
+    const emptyExtraction = (): Extraction => ({ cohort: "unknown", scope: "unknown", entering_term: null, applicants: null, admitted: null, enrolled: null, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, quotes: {}, page: null });
 
     function enqueue(school: School, urls: string[], extraction: Extraction | null, failures: CheckFailure[]) {
       const item: ReviewItem = {

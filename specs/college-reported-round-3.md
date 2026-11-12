@@ -503,6 +503,12 @@ deterministic reads (which say the college's file is wrong, not our pipeline). I
 - more than 25% of already-published values change in one run (today's rule).
 
 ## Decision 10: what later runs redo, and what is never redone
+> Amended 2026-11-11 by [college-reported-fall-figures.md](college-reported-fall-figures.md) Decision 10: "never
+> redone: discovery for a college whose index page works" applies to the **CDS** index page only. Notice discovery
+> (the pages a college posts about its newest class) runs by season for the top four tiers, with a per-season
+> back-off per college; a dated class-profile URL is reclassified as a notice of its term on the first run; the
+> "weekly Aug–Nov" cadence below is replaced by the three seasons.
+
 | | First run | Later runs |
 |---|---|---|
 | Discovery | Ladder for every college without a working link | Only colleges with no link, a broken index page (404 or 410), or `next_attempt` reached; starts again at step 0 |

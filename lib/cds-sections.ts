@@ -403,7 +403,7 @@ export interface ManifestEntry {
   unit_id: string;
   url: string;
   final_url?: string;
-  kind: "cds" | "class-profile";
+  kind: "cds" | "class-profile" | "notice";
   type: DocumentType;
   edition: string | null;
   /**

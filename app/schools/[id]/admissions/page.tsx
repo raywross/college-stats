@@ -32,6 +32,7 @@ import { GpaPanel } from "@/components/school/GpaPanel";
 import { admissionProfile } from "@/lib/cds/admissions";
 import { ScoreBands } from "@/components/school/ScoreBands";
 import { TestPolicyBlock } from "@/components/school/TestPolicyBlock";
+import { AnnouncedFigures, hasAnnouncedFigures } from "@/components/school/AnnouncedFigures";
 import { lineageFall, satTotalMedian } from "@/lib/score-bands";
 import { changesRequirement, policyEventText } from "@/lib/test-policy";
 import type { BandTest } from "@/lib/types";
@@ -114,6 +115,7 @@ export default async function AdmissionsPage({ params }: Props) {
 
   const items = [
     { id: "funnel", label: "The funnel" },
+    ...(hasAnnouncedFigures(school) ? [{ id: "announced", label: "Announced so far" }] : []),
     ...(publishesResidencyRates(school) ? [{ id: "residency", label: "Where applicants live" }] : []),
     { id: "yield", label: "Yield" },
     ...(hasEarly ? [{ id: "early", label: "Applying early" }] : []),
@@ -212,6 +214,7 @@ export default async function AdmissionsPage({ params }: Props) {
                 )}
               </Block>
             )}
+            <AnnouncedFigures school={school} cite={citeField} id="announced" />
             {bySex?.notable && (
               <div className="rounded-3xl border bg-card p-4 sm:p-6">
                 <h3 className="mb-1 flex items-center gap-1 font-display text-lg font-bold">

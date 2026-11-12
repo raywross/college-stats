@@ -3,14 +3,38 @@
  * extraction to a published entry. Pure module: no runtime imports besides lib/reported.ts and lib/fields.ts, so the
  * pipeline (scripts/sync-college-reported.mts, built separately) and the sync can both depend on it without pulling
  * in the rest of the app. Exports are named exactly as the pipeline imports them: `runChecks`, `toReportedEntry`,
- * `reportedToPatch`.
+ * `reportedToPatch`; `normalizeExtraction` reads an extraction stored before the fall-figures build, and
+ * `entryFromPicks` assembles an entry figure by figure (lib/reported-combine.ts combineByTerm).
  */
 import type { LineageRecord, ReportedAdmissions, ReportedData, ReportedSourceKind, School } from "./types";
-import { fallYear, type CheckFailure, type CheckId, type Extraction, type ReportedEntry, type ReportedValuePath } from "./reported.ts";
+import {
+  fallYear,
+  type CheckFailure,
+  type CheckId,
+  type Extraction,
+  type QualifiedFigure,
+  type ReportedEntry,
+  type ReportedValuePath,
+  type StoredExtraction,
+} from "./reported.ts";
 import type { FieldPath } from "./fields.ts";
 
 function fail(check: CheckId, detail: string): CheckFailure {
   return { check, detail };
+}
+
+/**
+ * An extraction with every fall-figures key (specs/college-reported-fall-figures.md): one stored before 2026-11-11 has
+ * no `qualifiers` (all its figures are exact), no `enrollment_target` and no `deposits` (null). Every reader of a
+ * stored extraction goes through this; `runChecks`, `toReportedEntry` and `combineByTerm` call it themselves.
+ */
+export function normalizeExtraction(e: Extraction | StoredExtraction): Extraction {
+  return { ...e, qualifiers: e.qualifiers ?? {}, enrollment_target: e.enrollment_target ?? null, deposits: e.deposits ?? null };
+}
+
+/** The college printed this figure as a rounded one ("more than 82,000"). */
+export function isApprox(e: Pick<Extraction, "qualifiers"> | StoredExtraction, k: QualifiedFigure): boolean {
+  return e.qualifiers?.[k] === "approx";
 }
 
 /** The rate a value implies: as stated, or admitted ÷ applicants when both counts are known. */
@@ -18,6 +42,13 @@ function effectiveRate(x: Pick<Extraction, "acceptance_rate" | "admitted" | "app
   if (x.acceptance_rate !== null) return x.acceptance_rate;
   if (x.admitted !== null && x.applicants !== null && x.applicants > 0) return x.admitted / x.applicants;
   return null;
+}
+
+/** The rate a value implies from exact figures only: a stated exact rate, or admitted ÷ applicants from two exact counts. */
+function exactRate(x: Extraction): number | null {
+  if (x.acceptance_rate !== null) return isApprox(x, "acceptance_rate") ? null : x.acceptance_rate;
+  if (isApprox(x, "applicants") || isApprox(x, "admitted")) return null;
+  return effectiveRate(x);
 }
 
 /** "46,618" or "46618" → true for value 46618; tolerant of thousands separators. */
@@ -37,21 +68,35 @@ function rateAppearsInQuote(value: number, quote: string): boolean {
   });
 }
 
-/** All seven checks, numbered as in the spec. `others` are extractions of the same college for the same run (check 7). */
-export function runChecks(x: Extraction, school: School, others?: Extraction[]): CheckFailure[] {
+/**
+ * All seven checks, numbered as in the spec. `others` are extractions of the same college for the same run (check 7).
+ * Fall figures (specs/college-reported-fall-figures.md Decision 3): check 1 fails a multi-campus or all-undergraduate
+ * cohort; check 2 holds an approximate figure's printed number to its quote ("82,000" in "more than 82,000") and covers
+ * the class goal and deposits; check 4 is skipped when a figure it compares is approximate; check 7 compares exact
+ * figures only. Accepts an extraction stored before those keys existed (`normalizeExtraction`).
+ */
+export function runChecks(input: Extraction | StoredExtraction, school: School, othersInput?: (Extraction | StoredExtraction)[]): CheckFailure[] {
   const failures: CheckFailure[] = [];
+  const x = normalizeExtraction(input);
+  const others = othersInput?.map(normalizeExtraction);
 
-  // 1. Cohort is first-year and scope is all rounds (not early decision only).
-  if (x.cohort !== "first-year" || x.scope !== "all-rounds") {
+  // 1. Cohort is first-year and scope is all rounds (not early decision only). A system's or several campuses' total,
+  // or new students of every level, is never a first-year figure.
+  if (x.cohort === "multi-campus" || x.cohort === "all-undergraduates") {
+    failures.push(fail("cohort-and-scope", `cohort="${x.cohort}": figures for ${x.cohort === "multi-campus" ? "more than one campus or a whole system" : "students of every level"} are never first-year figures`));
+  } else if (x.cohort !== "first-year" || x.scope !== "all-rounds") {
     failures.push(fail("cohort-and-scope", `cohort="${x.cohort}", scope="${x.scope}" (need first-year, all-rounds)`));
   }
 
-  // 2. Every published number has a quote, and the number appears in the quote.
-  const numberFields: { key: "applicants" | "admitted" | "enrolled" | "acceptance_rate"; isRate: boolean }[] = [
+  // 2. Every published number has a quote, and the number appears in the quote: an approximate one too (its printed
+  // number, as the model reports it), and the announced class goal and deposits.
+  const numberFields: { key: QualifiedFigure | "enrollment_target" | "deposits"; isRate: boolean }[] = [
     { key: "applicants", isRate: false },
     { key: "admitted", isRate: false },
     { key: "enrolled", isRate: false },
     { key: "acceptance_rate", isRate: true },
+    { key: "enrollment_target", isRate: false },
+    { key: "deposits", isRate: false },
   ];
   for (const { key, isRate } of numberFields) {
     const value = x[key];
@@ -75,8 +120,10 @@ export function runChecks(x: Extraction, school: School, others?: Extraction[]):
 
   // 4. Stated rate matches admitted ÷ applicants, when both are given, within the precision the college printed:
   //    "42%" allows 0.5 pt (Clemson states 42% for 42.43%), "4.0%" allows 0.1 pt, "4.18%" 0.05 pt. Otherwise nothing
-  //    to check (the rate is computed instead, in toReportedEntry).
-  if (x.acceptance_rate !== null && x.admitted !== null && x.applicants !== null && x.applicants > 0) {
+  //    to check (the rate is computed instead, in toReportedEntry). A rounded figure ("about 10%", "more than 82,000")
+  //    can't be held to that precision, so the check is skipped when any of the three is approximate.
+  const anyApprox = isApprox(x, "acceptance_rate") || isApprox(x, "applicants") || isApprox(x, "admitted");
+  if (!anyApprox && x.acceptance_rate !== null && x.admitted !== null && x.applicants !== null && x.applicants > 0) {
     const computed = x.admitted / x.applicants;
     const diffPts = Math.abs(x.acceptance_rate - computed) * 100;
     const tolerance = rateTolerancePts(x.quotes.acceptance_rate);
@@ -119,19 +166,20 @@ export function runChecks(x: Extraction, school: School, others?: Extraction[]):
   // within the tolerance of how it was printed (a profile's "5%" is 4.5–5.5%, as in check 4). A regular-decision
   // summary (scope regular-only) or a source whose scope is unknown is never held against a whole-cycle Common Data
   // Set: the numbers describe different pools, so a gap between them is not a disagreement (Vanderbilt, 2026-11-10).
+  // Only exact figures are compared: "more than 82,000" doesn't disagree with 82,118 (fall figures, Decision 3).
   for (const other of others ?? []) {
     if (other.entering_term !== x.entering_term) continue;
     if (other.cohort !== x.cohort || other.scope !== x.scope) continue;
     for (const key of ["applicants", "admitted", "enrolled"] as const) {
       const a = x[key];
       const b = other[key];
-      if (a === null || b === null) continue;
+      if (a === null || b === null || isApprox(x, key) || isApprox(other, key)) continue;
       const denom = Math.max(Math.abs(a), Math.abs(b), 1);
       const rel = Math.abs(a - b) / denom;
       if (rel > 0.01) failures.push(fail("sources-agree", `${key} ${a} vs other source's ${b} (${(rel * 100).toFixed(1)}% apart)`));
     }
-    const ra = effectiveRate(x);
-    const rb = effectiveRate(other);
+    const ra = exactRate(x);
+    const rb = exactRate(other);
     if (ra !== null && rb !== null) {
       const diffPts = Math.abs(ra - rb) * 100;
       const tolerance = Math.max(rateTolerancePts(x.quotes.acceptance_rate), rateTolerancePts(other.quotes.acceptance_rate));
@@ -144,56 +192,127 @@ export function runChecks(x: Extraction, school: School, others?: Extraction[]):
   return failures;
 }
 
-/**
- * Builds the published entry for an extraction that passed every check. Throws if `entering_term` doesn't parse to
- * a fall year — callers only reach this after `runChecks` returned no failures, which already guards that.
- */
-export function toReportedEntry(x: Extraction, school: School, src: { url: string; kind: ReportedSourceKind; retrieved: string; page?: number | null }, run: string): ReportedEntry {
-  const year = fallYear(x.entering_term);
-  if (year === null) throw new Error(`toReportedEntry: entering_term "${x.entering_term}" isn't a recognizable "Fall YYYY"`);
+/** One document's figures as `entryFromPicks` reads them: its extraction, where it was read, and the page to cite. */
+export interface PickSource {
+  e: Extraction;
+  url: string;
+  kind: ReportedSourceKind;
+  retrieved: string;
+  page?: number | null;
+}
 
-  const acceptance_rate = effectiveRate(x);
+/** Every value an entry can carry, each picked from one document. */
+export type PickKey = QualifiedFigure | "enrollment_target" | "deposits";
+
+/**
+ * Assembles a published entry for the class `term` ("Fall 2026") from one document per value (lib/reported-combine.ts
+ * picks them; `toReportedEntry` picks everything from one). `picks.acceptance_rate` is a stated rate; without one the rate
+ * is admitted ÷ applicants only when both counts are exact. Deposits give way to an enrolled count (the census count
+ * replaces them). `approx`, `enrollment_target` and `deposits` are written only when present, so an entry of exact
+ * figures has the same shape as before the fall-figures build. Each value cites its own document; the block's
+ * entering_term, year and source_kind cite the document that supplied applicants (else admitted, enrolled, the class
+ * goal, deposits, then the rate). Throws when nothing was picked or the term isn't "Fall YYYY".
+ */
+export function entryFromPicks(term: string, picks: Partial<Record<PickKey, PickSource>>, unitId: string, run: string): ReportedEntry {
+  const year = fallYear(term);
+  if (year === null) throw new Error(`entryFromPicks: entering_term "${term}" isn't a recognizable "Fall YYYY"`);
+  const p: Partial<Record<PickKey, PickSource>> = { ...picks };
+  if (p.enrolled && p.enrolled.e.enrolled !== null) delete p.deposits;
+  const meta = p.applicants ?? p.admitted ?? p.enrolled ?? p.enrollment_target ?? p.deposits ?? p.acceptance_rate;
+  if (!meta) throw new Error(`entryFromPicks: no figures for ${term}`);
+  const value = (k: PickKey): number | null => p[k]?.e[k] ?? null;
+
+  // The rate: as the college stated it, else computed from two exact counts (never from a rounded one).
+  let acceptance_rate: number | null = null;
+  let rateFrom: "stated" | "computed" | null = null;
+  if (p.acceptance_rate && p.acceptance_rate.e.acceptance_rate !== null) {
+    acceptance_rate = p.acceptance_rate.e.acceptance_rate;
+    rateFrom = "stated";
+  } else if (p.applicants && p.admitted && !isApprox(p.applicants.e, "applicants") && !isApprox(p.admitted.e, "admitted")) {
+    const ap = value("applicants");
+    const ad = value("admitted");
+    if (ap !== null && ad !== null && ap > 0) {
+      acceptance_rate = ad / ap;
+      rateFrom = "computed";
+    }
+  }
+
+  const approx: NonNullable<ReportedAdmissions["approx"]> = {};
+  for (const k of ["applicants", "admitted", "enrolled"] as const) if (p[k] && value(k) !== null && isApprox(p[k]!.e, k)) approx[k] = true;
+  if (rateFrom === "stated" && isApprox(p.acceptance_rate!.e, "acceptance_rate")) approx.acceptance_rate = true;
+  const target = value("enrollment_target");
+  const deposits = value("deposits");
+
   const admissions: ReportedAdmissions = {
-    entering_term: x.entering_term!,
+    entering_term: `Fall ${year}`,
     year,
-    applicants: x.applicants,
-    admitted: x.admitted,
-    enrolled: x.enrolled,
+    applicants: value("applicants"),
+    admitted: value("admitted"),
+    enrolled: value("enrolled"),
     acceptance_rate,
-    source_kind: src.kind,
+    ...(Object.keys(approx).length ? { approx } : {}),
+    ...(target !== null ? { enrollment_target: target } : {}),
+    ...(deposits !== null ? { deposits } : {}),
+    source_kind: meta.kind,
   };
 
-  const base = {
+  const base = (s: PickSource) => ({
     source: "college-site" as const,
     method: "extracted" as const,
-    year: x.entering_term!,
-    url: src.url,
-    retrieved: src.retrieved,
-    ...(src.page != null ? { page: src.page } : {}),
-  };
+    year: `Fall ${year}`,
+    url: s.url,
+    retrieved: s.retrieved,
+    ...(s.page != null ? { page: s.page } : {}),
+  });
 
   // Any quote in hand, for the block's own metadata (entering_term, year, source_kind): they aren't individually
   // quoted numbers, but the lineage guard (lib/lineage.ts validateSchool) requires every registered reported.* path
-  // to carry its own `extracted` record, so they cite the same document via whichever number's quote is available.
-  const anyQuote = x.quotes.applicants ?? x.quotes.admitted ?? x.quotes.enrolled ?? x.quotes.acceptance_rate ?? x.entering_term!;
+  // to carry its own `extracted` record, so they cite the metadata document via whichever number's quote is available.
+  const q = meta.e.quotes;
+  const anyQuote = q.applicants ?? q.admitted ?? q.enrolled ?? q.acceptance_rate ?? q.enrollment_target ?? q.deposits ?? meta.e.entering_term ?? `Fall ${year}`;
 
   const lineage: Partial<Record<ReportedValuePath, LineageRecord>> = {
-    "reported.admissions.entering_term": { ...base, quote: anyQuote },
-    "reported.admissions.year": { ...base, quote: anyQuote },
-    "reported.admissions.source_kind": { ...base, quote: anyQuote },
+    "reported.admissions.entering_term": { ...base(meta), quote: anyQuote },
+    "reported.admissions.year": { ...base(meta), quote: anyQuote },
+    "reported.admissions.source_kind": { ...base(meta), quote: anyQuote },
   };
-  if (x.applicants !== null) lineage["reported.admissions.applicants"] = { ...base, quote: x.quotes.applicants! };
-  if (x.admitted !== null) lineage["reported.admissions.admitted"] = { ...base, quote: x.quotes.admitted! };
-  if (x.enrolled !== null) lineage["reported.admissions.enrolled"] = { ...base, quote: x.quotes.enrolled! };
-  if (acceptance_rate !== null) {
-    const quote = x.acceptance_rate !== null ? x.quotes.acceptance_rate! : `${x.quotes.admitted} / ${x.quotes.applicants}`;
-    lineage["reported.admissions.acceptance_rate"] = { ...base, quote };
+  for (const k of ["applicants", "admitted", "enrolled"] as const) {
+    if (value(k) !== null) lineage[`reported.admissions.${k}`] = { ...base(p[k]!), quote: p[k]!.e.quotes[k]! };
   }
+  if (rateFrom === "stated") lineage["reported.admissions.acceptance_rate"] = { ...base(p.acceptance_rate!), quote: p.acceptance_rate!.e.quotes.acceptance_rate! };
+  else if (rateFrom === "computed") {
+    const quote = `${p.admitted!.e.quotes.admitted} / ${p.applicants!.e.quotes.applicants}`;
+    // From one document: extracted from it, as before. From two (a March release and a September one): derived.
+    lineage["reported.admissions.acceptance_rate"] = p.admitted!.url === p.applicants!.url ? { ...base(p.applicants!), quote } : { ...base(p.applicants!), method: "derived", quote };
+  }
+  // `approx` is stored, so it is registered and cited like source_kind: the first approximate figure's document and quote.
+  const firstApprox = (["applicants", "admitted", "enrolled", "acceptance_rate"] as const).find((k) => approx[k]);
+  if (firstApprox) lineage["reported.admissions.approx"] = { ...base(p[firstApprox]!), quote: p[firstApprox]!.e.quotes[firstApprox]! };
+  if (target !== null) lineage["reported.admissions.enrollment_target"] = { ...base(p.enrollment_target!), quote: p.enrollment_target!.e.quotes.enrollment_target! };
+  if (deposits !== null) lineage["reported.admissions.deposits"] = { ...base(p.deposits!), quote: p.deposits!.e.quotes.deposits! };
 
-  return { unit_id: school.unit_id, admissions, lineage, run };
+  return { unit_id: unitId, admissions, lineage, run };
 }
 
-/** A published entry as `school.reported` + `school.lineage` patches, for the sync to merge in. */
+/**
+ * Builds the published entry for one extraction that passed every check: a thin wrapper over `entryFromPicks` with
+ * every value from that document (lib/reported-combine.ts combineByTerm does the same across documents). Throws if
+ * `entering_term` doesn't parse to a fall year — callers only reach this after `runChecks` returned no failures, which
+ * already guards that.
+ */
+export function toReportedEntry(x: Extraction | StoredExtraction, school: School, src: { url: string; kind: ReportedSourceKind; retrieved: string; page?: number | null }, run: string): ReportedEntry {
+  const e = normalizeExtraction(x);
+  if (fallYear(e.entering_term) === null) throw new Error(`toReportedEntry: entering_term "${e.entering_term}" isn't a recognizable "Fall YYYY"`);
+  const s: PickSource = { e, url: src.url, kind: src.kind, retrieved: src.retrieved, page: src.page };
+  const picks: Partial<Record<PickKey, PickSource>> = {};
+  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate", "enrollment_target", "deposits"] as const) if (e[k] !== null) picks[k] = s;
+  return entryFromPicks(e.entering_term!, picks, school.unit_id, run);
+}
+
+/**
+ * A published entry as `school.reported` + `school.lineage` patches, for the sync to merge in: the whole block (with
+ * `approx`, `enrollment_target` and `deposits` when present) and every value's own record.
+ */
 export function reportedToPatch(entry: ReportedEntry): { reported: ReportedData; lineage: Partial<Record<FieldPath, LineageRecord>> } {
   return {
     reported: { admissions: entry.admissions },

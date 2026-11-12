@@ -534,13 +534,29 @@ export interface ReportedAdmissions {
   applicants: number | null;
   admitted: number | null;
   enrolled: number | null;
-  /** As stated by the college when it stated one; otherwise admitted ÷ applicants. */
+  /** As stated by the college when it stated one; otherwise admitted ÷ applicants (only from two exact counts). */
   acceptance_rate: number | null;
-  /** Which kind of document supplied the figures. */
+  /**
+   * Which figures are approximate as the college printed them ("more than 82,000"). Absent = all exact. Approximate
+   * figures show on the page but never enter `school.admissions` (lib/newest.ts), so the selectivity tier reads exact
+   * counts only (specs/college-reported-fall-figures.md Decision 3).
+   */
+  approx?: Partial<Record<"applicants" | "admitted" | "enrolled" | "acceptance_rate", true>>;
+  /** A class goal the college announced for this term ("target class of 3,988"); never the enrolled count. */
+  enrollment_target?: number | null;
+  /** First-year deposits announced for this term; replaced by the census count when it arrives. */
+  deposits?: number | null;
+  /** Kind of the document that supplied `applicants` (else admitted, else enrolled, else the target/deposits). */
   source_kind: ReportedSourceKind;
 }
 
-export type ReportedSourceKind = "cds" | "class-profile";
+/**
+ * `cds` a Common Data Set; `class-profile` an evergreen class-profile page; `notice` one dated page announcing figures
+ * for a named entering term (a news release, a PDF profile, a system fact sheet; specs/college-reported-fall-figures.md).
+ */
+export type ReportedSourceKind = "cds" | "class-profile" | "notice";
+/** How a college printed a figure: the number itself, or a rounded one with "more than", "about", "nearly". */
+export type FigureQualifier = "exact" | "approx";
 
 /** One residency column of the CDS C1 grid: first-time, first-year students. Missing is null, never 0. */
 export interface ResidencyCounts {

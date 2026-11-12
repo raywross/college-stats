@@ -126,11 +126,17 @@ an accuracy report (`data/reports/college-reported-accuracy-{date}.md`). A colle
 1 pt gets its recipe re-learned. This is the ongoing check on the cheaper models.
 
 ## Schedule
+Replaced 2026-11-11 by the three seasons of [college-reported-fall-figures.md](college-reported-fall-figures.md)
+Decision 4 (the "Aug–Nov weekly, fall class profiles" window missed every spring admit release):
+
 | Window | Frequency | Why |
 |---|---|---|
-| Aug–Nov | Weekly | Fall class profiles |
-| Dec–Jul | Monthly | CDS editions |
-Discovery runs once for all colleges, then only on escalation or when a college has no recipe.
+| Mar 15–May 15 (admits season) | Weekly | Regular-decision releases: applicants, admitted, rate |
+| Jun 1–Jul 31 (systems season) | Every two weeks | System fact sheets (UC) and deposit releases |
+| Aug 15–Nov 15 (census season) | Weekly | Enrollment and move-in releases: enrolled |
+| The rest of the year | Monthly | CDS editions |
+CDS discovery runs once for all colleges, then only on escalation or when a college has no recipe. Notice discovery
+runs each season for the top four selectivity tiers, with a per-season back-off per college.
 
 ## Cost (estimates, to be measured in the pilot)
 - Discovery with Sonnet 5 + web search: roughly $0.10–0.25 per college → ~$200–500 one-time for 1,893.

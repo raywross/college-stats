@@ -575,6 +575,9 @@ function c1Extraction(doc: DocumentRecord, v: Vals, derived: Record<CdsCode, Der
     admitted: v.num("C.117"),
     enrolled: v.num("C.118"),
     acceptance_rate: null,
+    qualifiers: {},
+    enrollment_target: null,
+    deposits: null,
     quotes,
     page: doc.items["C.116"]?.page ?? null,
   };

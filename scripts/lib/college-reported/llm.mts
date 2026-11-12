@@ -192,7 +192,13 @@ Report the NEWEST entering class the document describes:
 - quotes: for every number you report, the exact text from the document it came from, copied verbatim and containing that number as printed (e.g. "Total first-time, first-year who applied 45,409"). Omit the quote key for numbers you report as null.
 - page: the 1-based PDF page the figures are on ("--- Page N ---" markers), or null.
 
-Never guess or fill in a number that isn't printed in the document. If the document has no first-year admissions figures, return nulls with cohort and scope "unknown".`;
+Never guess or fill in a number that isn't printed in the document. If the document has no first-year admissions figures, return nulls with cohort and scope "unknown".
+
+Announcements (news releases, fact pages, newsletters, system fact sheets) state figures in their own words:
+- qualifiers: for each of applicants, admitted, enrolled, acceptance_rate you report, "exact" when the document prints the number itself; "approx" when it says "more than", "over", "nearly", "about", "roughly", "some", or rounds to a round number with such a word. Report the printed number (82,000 for "more than 82,000"), with a quote containing it.
+- enrollment_target: a class size the document calls a goal or target ("target class of 3,988", "aims to enroll about 4,100"), never reported as enrolled. deposits: first-year deposits or commitments ("6,682 deposits"), never reported as enrolled. Quotes for both. null when not stated.
+- cohort "multi-campus" when the figures cover more than one campus or a whole system; "all-undergraduates" when they cover new students of every level or the whole student body. Such figures are never first-year figures. A system fact sheet with one row per campus: report only the named college's own row, as "first-year".
+- A news release's own date is not the entering term: "Fall 2026" is the class that started in fall 2026 (Class of 2030). When the user message names an expected entering term, report figures for that term only.`;
 
 export interface DocumentInput {
   kind: ReportedSourceKind;
@@ -201,7 +207,15 @@ export interface DocumentInput {
   text?: string;
   /** A scanned PDF with no text layer, sent as a document block. */
   pdfBase64?: string;
+  /** A notice's expected entering term ("Fall 2026"), stated in the user message (specs/college-reported-fall-figures.md). */
+  term?: string;
 }
+
+const KIND_WORDS: Record<ReportedSourceKind, string> = {
+  cds: "Common Data Set",
+  "class-profile": "class profile or admissions news",
+  notice: "announcement (news release, fact page, newsletter, or system fact sheet)",
+};
 
 /** Remembers, per model, that structured outputs were rejected so later calls go straight to the strict tool. */
 const toolFallback = new Set<string>();
@@ -220,8 +234,9 @@ export async function extract(ctx: LlmContext, school: School, doc: DocumentInpu
     type: "text",
     text: [
       `College: ${school.name} (${school.location.city}, ${school.location.state})`,
-      `Document kind: ${doc.kind === "cds" ? "Common Data Set" : "class profile or admissions news"}`,
+      `Document kind: ${KIND_WORDS[doc.kind]}`,
       `URL: ${doc.url}`,
+      ...(doc.term ? [`Expected entering term: ${doc.term}`] : []),
       ...(doc.text !== undefined ? ["", "<document>", doc.text, "</document>"] : []),
     ].join("\n"),
   });
@@ -269,10 +284,13 @@ export function normalizeExtraction(e: Partial<Extraction>): Extraction {
   let rate = typeof e.acceptance_rate === "number" && Number.isFinite(e.acceptance_rate) ? e.acceptance_rate : null;
   if (rate !== null && rate > 1) rate = rate / 100;
   const quotes: Extraction["quotes"] = {};
-  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate"] as const) {
+  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate", "enrollment_target", "deposits"] as const) {
     const q = e.quotes?.[k];
     if (typeof q === "string" && q.trim()) quotes[k] = q.trim();
   }
+  // Fall figures (specs/college-reported-fall-figures.md Decision 3): absent qualifier = exact; only "approx" is kept.
+  const qualifiers: Extraction["qualifiers"] = {};
+  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate"] as const) if (e.qualifiers?.[k] === "approx") qualifiers[k] = "approx";
   return {
     cohort: e.cohort ?? "unknown",
     scope: e.scope ?? "unknown",
@@ -281,6 +299,9 @@ export function normalizeExtraction(e: Partial<Extraction>): Extraction {
     admitted: int(e.admitted),
     enrolled: int(e.enrolled),
     acceptance_rate: rate,
+    qualifiers,
+    enrollment_target: int(e.enrollment_target),
+    deposits: int(e.deposits),
     quotes,
     page: int(e.page),
   };
@@ -832,6 +853,107 @@ export async function searchOnly(ctx: CallContext, school: SearchSchool, opts: {
     if (nudged) break;
     nudged = true;
     messages.push({ role: "user", content: "Call save_candidates now with the links you found (none_found: true if none fit)." });
+  }
+  return { candidates: [], none_found: true, searches };
+}
+
+/* ------------------------------------------------------------------ */
+/* Fall figures: the season search (specs/college-reported-fall-figures.md Decision 5, step 1) */
+/* ------------------------------------------------------------------ */
+
+export interface NoticeCandidate {
+  kind: "notice" | "news-index";
+  url: string;
+}
+
+export interface SearchNoticeResult {
+  candidates: NoticeCandidate[];
+  none_found: boolean;
+  searches: number;
+}
+
+/** At most this many candidates per call: the announcement and the listing it sits on, best first. */
+export const NOTICE_CANDIDATES_MAX = 3;
+
+export const NOTICE_TOOL: Anthropic.Tool = {
+  name: "save_notice_candidates",
+  description: "Record the pages where the college announced figures about its entering first-year class. Call it exactly once, when done searching.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["candidates", "none_found"],
+    properties: {
+      candidates: {
+        type: "array",
+        description: "At most three links from the search results, on pages the university runs, best first",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["kind", "url"],
+          properties: {
+            kind: { type: "string", enum: ["notice", "news-index"] },
+            url: { type: "string" },
+          },
+        },
+      },
+      none_found: { type: "boolean" },
+    },
+  },
+};
+
+/** The notice search's instructions (the brief's words are the contract; tune only if the pilot shows a need). */
+export function noticeSystem(term: string): string {
+  const year = Number(/(\d{4})/.exec(term)?.[1] ?? 0);
+  return `You find the page where a U.S. college itself announced figures about its ${term} entering first-year class: how many applied, were admitted, or enrolled, or its admit rate. Search the web at most twice; do not open pages. Use only pages the university runs: its admissions or news office, its institutional research office, a university magazine or newsletter, a provost's update. Never a student newspaper, never a third-party site. Prefer a page that names the term (${term}, Class of ${year + 4}) in its title. Call save_notice_candidates once with up to three links, best first: the announcement itself (kind "notice") and, if you saw one, the news listing page it sits on (kind "news-index"). If nothing fits, none_found true.`;
+}
+
+/** One turn's notice-search request: `web_search` only (no `web_fetch`), the college's two searches, effort low. */
+export function searchNoticeParams(messages: Anthropic.MessageParam[], searchesLeft: number, term: string, model: string = ROUND3_MODELS.search): Anthropic.MessageStreamParams {
+  return {
+    model,
+    max_tokens: 4000,
+    system: noticeSystem(term),
+    output_config: { effort: "low" },
+    tools: [{ type: "web_search_20260209", name: "web_search", max_uses: Math.max(1, Math.min(SEARCH_ONLY_LIMITS.searches, searchesLeft)) }, NOTICE_TOOL],
+    messages,
+  };
+}
+
+/**
+ * A season pass's paid step (Decision 5, step 1): `searchOnly`'s sibling with the notice prompt and the same limits
+ * (two searches across turns, no fetch). Returns at most three http(s) candidates for our code to check and scan
+ * (./phases.mts follows them). Logged as a `search` call, so its cost lands in the summary's search rows.
+ */
+export async function searchNotice(ctx: CallContext, school: SearchSchool, season: { term: string }, opts: { model?: string } = {}): Promise<SearchNoticeResult> {
+  const model = opts.model ?? ROUND3_MODELS.search;
+  priceOf(model);
+  const user = [
+    `College: ${school.name} (${school.location.city}, ${school.location.state}), IPEDS unit ${school.unit_id}`,
+    `Website: ${school.links?.website ?? "unknown"}`,
+    `Entering term: ${season.term}`,
+  ].join("\n");
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: user }];
+  let searches = 0;
+  let nudged = false;
+  for (let turn = 0; turn < SEARCH_ONLY_LIMITS.turns; turn++) {
+    const res = await ctx.client.messages
+      .stream(searchNoticeParams([...messages], SEARCH_ONLY_LIMITS.searches - searches, season.term, model), { signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS) })
+      .finalMessage();
+    searches += res.usage?.server_tool_use?.web_search_requests ?? 0;
+    ctx.onCall?.(callLogRow({ run: ctx.run, at: (ctx.now?.() ?? new Date()).toISOString(), college: school.unit_id, job: "search", model, mode: "interactive", document_type: null, call: null, estimated_input_tokens: null }, res.usage, res.stop_reason));
+    const call = res.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === NOTICE_TOOL.name);
+    if (call) {
+      const input = call.input as { candidates?: NoticeCandidate[]; none_found?: boolean };
+      const candidates = (input.candidates ?? []).filter((c) => (c.kind === "notice" || c.kind === "news-index") && /^https?:\/\//.test(c.url)).slice(0, NOTICE_CANDIDATES_MAX);
+      return { candidates, none_found: Boolean(input.none_found) || !candidates.length, searches };
+    }
+    if (res.stop_reason === "refusal") throw new Error(`notice search refused (${res.stop_details?.category ?? "no category"})`);
+    messages.push({ role: "assistant", content: res.content });
+    if (res.stop_reason === "pause_turn" && searches < SEARCH_ONLY_LIMITS.searches) continue;
+    if (nudged) break;
+    nudged = true;
+    messages.push({ role: "user", content: "Call save_notice_candidates now with the links you found (none_found: true if none fit)." });
   }
   return { candidates: [], none_found: true, searches };
 }

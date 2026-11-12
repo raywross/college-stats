@@ -22,6 +22,10 @@
  *     --open-admission-search  open-admission colleges get step 3 when money is left (off: steps 0–2 only)
  *     --poll-minutes N      wait this long for batches when COLLEGE_REPORTED_POLL_UNTIL isn't set (default 90 for
  *                           --phase all, 0 for collect: check each batch once)
+ *     --season admits|systems|census|auto|none   the fall-figures discovery season (specs/college-reported-fall-figures.md
+ *                           Decision 4): auto (default) = the season today falls in, if any; none = no season pass
+ *     --season-budget <usd> what the season's notice searches may spend, default $0.10 × colleges in scope this run,
+ *                           never more than --max-cost
  *     --store supabase|file:<dir>   where the state lives (default supabase when DATA_SUPABASE_URL is set)
  *     --rediscover --dry-run --run <id>
  *
@@ -50,7 +54,8 @@ import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { UnpricedModelError, assertPriced, summaryCost, type ModelClient } from "./lib/college-reported/models.mts";
 import { bundledDir, readBundledReference } from "./lib/data-platform/bundled.mts";
-import { createRound3, PHASES, type Phase } from "./lib/college-reported/phases.mts";
+import { createRound3, defaultSeasonBudget, PHASES, type Phase } from "./lib/college-reported/phases.mts";
+import { SEASON_WINDOWS, seasonOn, type Season } from "../lib/seasons.ts";
 import { createArchive } from "./lib/college-reported/archive.mts";
 import { parseTiers, pickPilot, sampleByTier, tierOf, type PilotFile } from "./lib/college-reported/pilot.mts";
 import { REFERENCE_KEYS, oldestOpenRun, openReportedRun, readColleges } from "./lib/college-reported/state.mts";
@@ -77,6 +82,17 @@ const MAX_DISCOVERIES = Number(values("max-discoveries")[0] ?? 100);
 const RUN = values("run")[0] ?? new Date().toISOString().replace(/\.\d+Z$/, "Z");
 const MAX_COST = Number(values("max-cost")[0] ?? (ALL ? 150 : 25));
 const POLL_MINUTES = Number(values("poll-minutes")[0] ?? (PHASE === "all" ? 90 : 0));
+const SEASON_FLAG = values("season")[0] ?? "auto";
+const SEASON_BUDGET = values("season-budget")[0];
+const SEASON_FLAGS = ["auto", "none", ...SEASON_WINDOWS.map((w) => w.key)] as const;
+
+/** `--season`: auto = the season today falls in (lib/seasons.ts seasonOn); none = no season; a key = that season, this year's term. */
+function seasonFrom(flag: string, today: string): Season | null {
+  if (flag === "none") return null;
+  if (flag === "auto") return seasonOn(today);
+  const w = SEASON_WINDOWS.find((x) => x.key === flag)!;
+  return { key: w.key, term: `Fall ${today.slice(0, 4)}`, cadence: w.cadence };
+}
 /** Exit code for a run that ended early: the state holds everything it finished. */
 const STOPPED = 3;
 
@@ -84,7 +100,7 @@ function usage(msg: string): never {
   console.error(
     `${msg}\nUsage: npm run sync-college-reported -- (--pilot | --all | --college <unit_id> ... | --tiers <list> | --sample N [--tiers <list>]) ` +
       `[--phase prepare|discover|submit|collect|all] [--reextract --call C|rest] [--rediscover] [--dry-run] [--max-discoveries N] ` +
-      `[--max-cost <usd>] [--archive-prior] [--open-admission-search] [--poll-minutes N] [--run <id>] [--store supabase|file:<dir>] [--print-open-run]`
+      `[--max-cost <usd>] [--season auto|none|admits|systems|census] [--season-budget <usd>] [--archive-prior] [--open-admission-search] [--poll-minutes N] [--run <id>] [--store supabase|file:<dir>] [--print-open-run]`
   );
   process.exit(1);
 }
@@ -115,6 +131,8 @@ async function main() {
   if (!Number.isFinite(MAX_COST) || MAX_COST <= 0) usage("--max-cost needs a dollar amount above 0.");
   if (!Number.isFinite(POLL_MINUTES) || POLL_MINUTES < 0) usage("--poll-minutes needs a number of minutes.");
   if (SAMPLE && !(Number.isInteger(Number(SAMPLE)) && Number(SAMPLE) > 0)) usage("--sample needs a whole number above 0.");
+  if (!(SEASON_FLAGS as readonly string[]).includes(SEASON_FLAG)) usage(`--season must be one of ${SEASON_FLAGS.join(", ")}.`);
+  if (SEASON_BUDGET !== undefined && !(Number.isFinite(Number(SEASON_BUDGET)) && Number(SEASON_BUDGET) >= 0)) usage("--season-budget needs a dollar amount (0 or more).");
   let store: DataStore;
   try {
     store = storeFromFlag(flagValue(argv, "--store"));
@@ -204,7 +222,10 @@ async function main() {
     onProgress: (s) => run.save(s),
   });
   const what = PHASE === "collect" && !targets.length ? "open batches" : `${targets.length} colleges`;
-  console.log(`Run ${RUN}, phase ${PHASE}${REEXTRACT ? ` (re-extract ${CALL} from the archive)` : ""}: ${what}, cost cap $${MAX_COST}${DRY ? " (dry run: nothing written to the store)" : ""}`);
+  const season = seasonFrom(SEASON_FLAG, new Date().toISOString().slice(0, 10));
+  const seasonBudget = season ? Math.min(MAX_COST, SEASON_BUDGET !== undefined ? Number(SEASON_BUDGET) : defaultSeasonBudget(targets, MAX_COST)) : 0;
+  const seasonText = season ? `, season ${season.key} (${season.term}, budget $${seasonBudget.toFixed(2)})` : ", no season";
+  console.log(`Run ${RUN}, phase ${PHASE}${REEXTRACT ? ` (re-extract ${CALL} from the archive)` : ""}: ${what}, cost cap $${MAX_COST}${seasonText}${DRY ? " (dry run: nothing written to the store)" : ""}`);
   let result: Awaited<ReturnType<typeof pipeline.run>>;
   try {
     result = await pipeline.run(state, {
@@ -221,6 +242,8 @@ async function main() {
       openAdmissionLeftover: flag("open-admission-search"),
       pollUntil,
       scale: targets.length ? schools.length / targets.length : 1,
+      season,
+      seasonBudget,
     });
   } catch (err) {
     // Keep what finished and hold the set, so the publisher waits for a person.
@@ -234,6 +257,7 @@ async function main() {
   console.log(`\nAttempted ${s.attempted}, documents read ${s.documents_read}, published C1 ${s.published}, changed values ${s.changed}, C1 failed ${s.failed}, unreachable ${s.unreachable ?? 0}, discovered ${s.discovered}, escalated ${s.escalated}`);
   for (const u of s.usage_rows) console.log(`  ${u.job} ${u.model} ${u.mode}${u.call ? ` ${u.call}` : ""}: ${u.calls} calls, ${u.input_tokens} in / ${u.output_tokens} out, ~$${u.cost_usd.toFixed(4)}`);
   console.log(`  estimated total: ~$${summaryCost(s).toFixed(2)}`);
+  if (s.season) console.log(`  season ${s.season.key} (${s.season.term}): ${s.season.colleges} college(s) in scope, ${s.season.searched ?? 0} searched, ${s.season.found} gained a notice, $${s.season.spent_usd.toFixed(2)} of $${s.season.budget_usd.toFixed(2)}`);
   if (s.projection) console.log(`  projection: $${(s.projection.run_usd ?? s.projection.full_run_usd).toFixed(2)} this run, $${s.projection.full_run_usd.toFixed(2)} for the full run`);
   if (result.exit === 3) {
     await finish(3, `Stopped early: ${result.message}`);

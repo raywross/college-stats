@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
-import { rateTolerancePts, runChecks, toReportedEntry, reportedToPatch } from "../lib/reported-checks.ts";
+import { normalizeExtraction, rateTolerancePts, runChecks, toReportedEntry, reportedToPatch } from "../lib/reported-checks.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
 import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
@@ -33,6 +33,9 @@ function goodExtraction(): Extraction {
     admitted: 1865,
     enrolled: 1500,
     acceptance_rate: 0.04,
+    qualifiers: {},
+    enrollment_target: null,
+    deposits: null,
     quotes: {
       applicants: "Princeton received 46,618 applications for the Class of 2030.",
       admitted: "The university admitted 1,865 students.",
@@ -155,6 +158,74 @@ test("check 7: rates are compared at the precision they were printed", () => {
   const far: Extraction = { ...rounded, acceptance_rate: 0.052, quotes: { acceptance_rate: "an admit rate of 5.2%" } };
   const failures = runChecks(precise, school(), [far]);
   assert.ok(failures.some((f) => f.check === "sources-agree" && f.detail.includes("acceptance_rate")), JSON.stringify(failures));
+});
+
+/* ---- Fall figures (specs/college-reported-fall-figures.md Decision 3): the three check changes ---- */
+
+test("check 1: a multi-campus or all-undergraduate cohort fails, however clean its numbers", () => {
+  for (const cohort of ["multi-campus", "all-undergraduates"] as const) {
+    const failures = runChecks({ ...goodExtraction(), cohort }, school());
+    assert.deepEqual(failures.map((f) => f.check), ["cohort-and-scope"], cohort);
+    assert.match(failures[0].detail, /never first-year figures/);
+  }
+});
+
+test("check 2: an approximate figure's printed number must be in its quote; so must a class goal and deposits", () => {
+  const approx: Extraction = {
+    ...goodExtraction(),
+    applicants: 46000,
+    acceptance_rate: null,
+    qualifiers: { applicants: "approx" },
+    quotes: { ...goodExtraction().quotes, applicants: "More than 46,000 students applied.", acceptance_rate: undefined },
+  };
+  assert.deepEqual(runChecks(approx, school()), []);
+  const wrong = { ...approx, quotes: { ...approx.quotes, applicants: "Nearly 50,000 students applied." } };
+  assert.ok(runChecks(wrong, school()).some((f) => f.check === "quote-present" && f.detail.includes("applicants=46000")));
+  const target: Extraction = { ...goodExtraction(), enrollment_target: 1450, deposits: 1600, quotes: { ...goodExtraction().quotes, enrollment_target: "a target class of 1,450", deposits: "1,600 deposits" } };
+  assert.deepEqual(runChecks(target, school()), []);
+  const noQuote = { ...target, quotes: { ...target.quotes, deposits: undefined } };
+  assert.ok(runChecks(noQuote, school()).some((f) => f.check === "quote-present" && f.detail === "deposits=1600 has no quote"));
+});
+
+test("check 4 is skipped when a figure it compares is approximate", () => {
+  // "about 4.2%" against 1,865 ÷ 46,618 (4.0%) passes; the same rate printed as exact fails (0.2 pt off, 0.1 allowed).
+  const approx: Extraction = { ...goodExtraction(), acceptance_rate: 0.042, qualifiers: { acceptance_rate: "approx" }, quotes: { ...goodExtraction().quotes, acceptance_rate: "about 4.2% were admitted" } };
+  assert.deepEqual(runChecks(approx, school()).filter((f) => f.check === "rate-matches"), []);
+  assert.ok(runChecks({ ...approx, qualifiers: {} }, school()).some((f) => f.check === "rate-matches"));
+});
+
+test("check 7 compares exact figures only", () => {
+  const rounded: Extraction = { ...goodExtraction(), applicants: 40000, acceptance_rate: null, qualifiers: { applicants: "approx" }, quotes: { ...goodExtraction().quotes, applicants: "more than 40,000 applied", acceptance_rate: undefined } };
+  assert.deepEqual(runChecks(goodExtraction(), school(), [rounded]), [], "46,618 doesn't disagree with 'more than 40,000'");
+  // The same 40,000 printed as an exact count does disagree: the guard is the qualifier.
+  const exact = { ...rounded, qualifiers: {} };
+  assert.ok(runChecks(goodExtraction(), school(), [exact]).some((f) => f.check === "sources-agree" && f.detail.includes("applicants")));
+  // An approximate stated rate isn't compared either.
+  const aboutRate: Extraction = { ...goodExtraction(), acceptance_rate: 0.05, qualifiers: { acceptance_rate: "approx" }, quotes: { ...goodExtraction().quotes, acceptance_rate: "about 5%" } };
+  assert.deepEqual(runChecks(goodExtraction(), school(), [aboutRate]).filter((f) => f.check === "sources-agree"), []);
+});
+
+test("an extraction stored without the fall-figures keys is checked as all exact", () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping the new keys is the point
+  const { qualifiers: _q, enrollment_target: _t, deposits: _d, ...stored } = goodExtraction();
+  assert.deepEqual(normalizeExtraction(stored), goodExtraction());
+  assert.deepEqual(runChecks(stored, school(), [stored]), []);
+});
+
+test("the lineage guard rejects a class goal or deposits stored without an extracted record", () => {
+  const s = school();
+  const x: Extraction = { ...goodExtraction(), enrollment_target: 1450, deposits: 1600, quotes: { ...goodExtraction().quotes, enrollment_target: "a target class of 1,450", deposits: "1,600 deposits" } };
+  const { reported, lineage } = reportedToPatch(toReportedEntry(x, s, SRC, "run-2026-11-11"));
+  // Enrolled is stated, so the census count replaces deposits.
+  assert.equal(reported.admissions!.deposits, undefined);
+  assert.equal(reported.admissions!.enrollment_target, 1450);
+  s.reported = reported;
+  s.lineage = { ...(s.lineage ?? {}), ...lineage };
+  assert.deepEqual(validateSchool(s, meta), []);
+  delete s.lineage["reported.admissions.enrollment_target"];
+  assert.match(validateSchool(s, meta).join("\n"), /reported\.admissions\.enrollment_target is stored without a lineage record/);
+  s.reported = { admissions: { ...reported.admissions!, deposits: 1600 } };
+  assert.match(validateSchool(s, meta).join("\n"), /reported\.admissions\.deposits is stored without a lineage record/);
 });
 
 /* ---- toReportedEntry / reportedToPatch ---- */

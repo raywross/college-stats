@@ -77,6 +77,9 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
   },
+  // "college-reported" came back 2026-11-11 with the fall-figures spec (from the owner's question about an Instagram
+  // post with UT Austin's newest numbers while the site showed the year before) and left again the same day when it
+  // was built (#248).
   // "data" (2026-11-05): public sources beyond the federal college files, from the owner's question about niche.com.
   {
     key: "data",
@@ -301,6 +304,8 @@ export const ROADMAP: RoadmapSpec[] = [
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
   // Additional data (2026-11-05): one page for six sources, from the comparison with niche.com; each becomes its own
   // spec in the page's order when built (specs/data-expansion/README.md, wave 7).
+  // College-reported fall figures (specs/college-reported-fall-figures.md: notices, seasons, the Announced so far
+  // block) was specified and built 2026-11-11 on feature/fall-figures (#248); see its "As built" section.
   {
     slug: "sources-beyond-federal",
     file: "specs/data-expansion/sources-beyond-federal.md",

@@ -4,6 +4,11 @@
  * itself**, value by value, with a lineage record per replaced value and the previous funnel kept in
  * `admissions.federal`. Every view then reads `school.admissions` as before; nothing resolves at render time.
  *
+ * Approximate figures (`reported.admissions.approx`, "more than 82,000") never enter `school.admissions`, and the year
+ * moves only with an exact applicants or admitted count, so the selectivity tier (lib/selectivity.ts rawInputs) reads
+ * exact counts only; the announced class goal and deposits never touch it (specs/college-reported-fall-figures.md
+ * Decision 3).
+ *
  * `applyNewest` is called by `lib/reported-merge.ts#mergeReported` (so by `npm run merge-reported` and
  * `npm run sync-data`); `restoreFederal` undoes it exactly (byte for byte), so a college dropped from
  * data/college-reported.json gets its previous funnel back. Pure: no I/O, never mutates its input.
@@ -57,8 +62,9 @@ export function applyNewest(school: School, opts: { factorsYear?: number | null 
     return rec ? { ...rec } : undefined;
   };
 
+  const exact = (k: (typeof COUNTS)[number] | "acceptance_rate") => r.approx?.[k] !== true;
   for (const k of COUNTS) {
-    if (r[k] == null || !replaceable(k)) continue;
+    if (r[k] == null || !exact(k) || !replaceable(k)) continue;
     values[k] = r[k];
     const rec = copy(rep(k));
     if (rec) records[k] = rec;
@@ -70,7 +76,7 @@ export function applyNewest(school: School, opts: { factorsYear?: number | null 
   // everyone, but the rate stays null, as the health view, the estimate, and selectivity all read it (Cameron
   // University's 748 of 748, run 20261019-191037-103).
   if (a.open_admission !== true && replaceable("acceptance_rate")) {
-    if (r.acceptance_rate != null) {
+    if (r.acceptance_rate != null && exact("acceptance_rate")) {
       values.acceptance_rate = r.acceptance_rate;
       const rec = copy(rep("acceptance_rate"));
       if (rec) records.acceptance_rate = rec;
@@ -97,7 +103,8 @@ export function applyNewest(school: School, opts: { factorsYear?: number | null 
   // The previous rate, kept, but no longer next to its own counts: say it's calculated from the previous class's.
   if (!rateReplaced && a.acceptance_rate !== null && replaceable("acceptance_rate")) records.acceptance_rate = keptRateRecord(prev, a.year);
 
-  // The class year moves with applicants or admitted (the counts that define a class), never with enrolled alone.
+  // The class year moves with applicants or admitted (the counts that define a class), never with enrolled alone, and
+  // only with an exact one (an approximate count never reaches `values`).
   if ((values.applicants !== undefined || values.admitted !== undefined) && replaceable("year")) {
     values.year = r.year;
     const rec = copy(rep("entering_term"));

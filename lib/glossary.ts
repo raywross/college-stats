@@ -133,6 +133,28 @@ const entries = {
     category: "Admissions",
     related: ["admitted", "yield"],
   },
+  /** specs/college-reported-fall-figures.md Decision 3: a goal the college announces, shown with its label, never as enrolled. */
+  "enrollment-target": {
+    term: "Class goal",
+    short: "The size of first-year class a college says it aims to enroll, announced before the class arrives. It's a goal, not a count of who enrolled.",
+    long: "Some colleges announce a target for the coming class (\"a target class of 3,988\") in the spring or summer. We show it with its label and the college's own words until the college publishes how many actually enrolled; it never stands in for the enrolled count or feeds any calculation.",
+    category: "Admissions",
+    related: ["enrolled", "deposits"],
+  },
+  deposits: {
+    term: "Deposits",
+    short: "How many admitted students paid a deposit to hold a place in the first-year class, as the college announced it over the summer. Some students who deposit don't enroll.",
+    long: "Deposits arrive by early May and colleges sometimes announce a total. It's an early sign of the class's size, not its final count: the enrolled count replaces it once the college publishes one in the fall. It never feeds any calculation.",
+    category: "Admissions",
+    related: ["enrolled", "enrollment-target", "summer-melt"],
+  },
+  "approximate-figure": {
+    term: "Approximate figure",
+    short: "A number the college announced as a rounded one, such as \"more than 82,000 applications\" or \"about 10% admitted\". We show it as the college said it.",
+    long: "Colleges often announce their newest class in news releases months before their full figures, and round as they go. A rounded figure shows on the profile with the college's own wording and source, but it never replaces an exact count, never feeds a calculated rate, and never changes Quad's selectivity, which reads exact counts only.",
+    category: "How we measure",
+    related: ["applicants", "acceptance-rate", "selectivity-tier"],
+  },
   yield: {
     term: "Yield rate",
     short: "The share of admitted students who choose to enroll. High yield means students who get in tend to say yes.",

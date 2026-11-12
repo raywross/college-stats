@@ -49,17 +49,24 @@ on:
         type: choice
         options: [none, C, rest]
         default: none
+      season:
+        description: "Fall-figures season pass (auto = the season today falls in, if any; none = no pass)"
+        type: choice
+        options: [auto, none, admits, systems, census]
+        default: auto
       request_id:
         description: Set by the admin console to find its run; leave empty
         type: string
         default: ""
   schedule:
-    # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
-    # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,
-    # widely-supported schedule and the "Check schedule window" step below decides from the current UTC month
-    # whether this particular firing should actually run (specs/college-reported-data.md#schedule).
-    - cron: "0 13 * * 1" # every Monday 13:00 UTC — proceeds only Aug–Nov (fall class-profile season)
-    - cron: "0 13 1 * *" # the 1st of every month, 13:00 UTC — proceeds only Dec–Jul (CDS edition season)
+    # Three entries because one cron line can't mix a weekly cadence in some months with a monthly or two-weekly one in
+    # others (and GitHub's schedule parser doesn't reliably support month ranges combined with a weekday filter); each
+    # fires on a plain, widely-supported schedule and the "Check schedule window" step below decides from the current
+    # UTC month whether this particular firing should actually run (specs/college-reported-fall-figures.md Decision 4;
+    # specs/college-reported-data.md#schedule). Which season a run looks in is the script's own `--season auto`.
+    - cron: "0 13 * * 1" # every Monday 13:00 UTC — proceeds only Mar–May and Aug–Nov (admits and census seasons)
+    - cron: "0 13 1 * *" # the 1st of every month, 13:00 UTC — proceeds only Dec–Feb and Jun–Jul
+    - cron: "0 13 15 6,7 *" # the 15th of June and July, 13:00 UTC — with the 1st, the systems season every two weeks
     # The collect job: exits at once unless the store lists an open batch. Only the collect job runs on it.
     - cron: "*/30 * * * *"
 
@@ -94,12 +101,18 @@ jobs:
           month=$(date -u +%-m)
           event="${{ github.event.schedule }}"
           proceed=false
+          # The season calendar (specs/college-reported-fall-figures.md Decision 4; lib/seasons.ts SEASON_WINDOWS):
+          # admits Mar 15–May 15 and census Aug 15–Nov 15 weekly, systems Jun 1–Jul 31 every two weeks, the CDS
+          # editions monthly in between. Kept in step with lib/jobs/registry.ts (tests/jobs.test.mts).
           if [ "$event" = "0 13 * * 1" ]; then
-            # Weekly-Monday cron: only Aug (8) through Nov (11).
-            if [ "$month" -ge 8 ] && [ "$month" -le 11 ]; then proceed=true; fi
+            # Weekly-Monday cron: Mar (3) through May (5), and Aug (8) through Nov (11).
+            if { [ "$month" -ge 3 ] && [ "$month" -le 5 ]; } || { [ "$month" -ge 8 ] && [ "$month" -le 11 ]; }; then proceed=true; fi
           elif [ "$event" = "0 13 1 * *" ]; then
-            # Monthly-1st cron: only Dec (12) through Jul (7).
-            if [ "$month" -eq 12 ] || [ "$month" -le 7 ]; then proceed=true; fi
+            # Monthly-1st cron: Dec (12), Jan (1), Feb (2), Jun (6), Jul (7).
+            if [ "$month" -eq 12 ] || [ "$month" -le 2 ] || [ "$month" -eq 6 ] || [ "$month" -eq 7 ]; then proceed=true; fi
+          elif [ "$event" = "0 13 15 6,7 *" ]; then
+            # Systems-season cron (the 15th): only Jun (6) and Jul (7).
+            if [ "$month" -eq 6 ] || [ "$month" -eq 7 ]; then proceed=true; fi
           fi
           echo "This firing: $event, month $month, proceed=$proceed"
           echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
@@ -115,6 +128,7 @@ jobs:
             echo "max_discoveries=100" >> "$GITHUB_OUTPUT"
             echo "max_cost=150" >> "$GITHUB_OUTPUT"
             echo "reextract=none" >> "$GITHUB_OUTPUT"
+            echo "season=auto" >> "$GITHUB_OUTPUT"
           else
             mode="${{ inputs.mode }}"
             college="${{ inputs.college }}"
@@ -128,6 +142,7 @@ jobs:
             echo "max_discoveries=${{ inputs.max_discoveries }}" >> "$GITHUB_OUTPUT"
             echo "reextract=${{ inputs.reextract }}" >> "$GITHUB_OUTPUT"
             echo "max_cost=${{ inputs.max_cost }}" >> "$GITHUB_OUTPUT"
+            echo "season=${{ inputs.season || 'auto' }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Compute run id
@@ -167,6 +182,7 @@ jobs:
           fi
           flags="$flags --max-discoveries ${{ steps.params.outputs.max_discoveries }}"
           flags="$flags --max-cost ${{ steps.params.outputs.max_cost }}"
+          flags="$flags --season ${{ steps.params.outputs.season || 'auto' }}"
           # After a schema bump: re-read one call from the archive, no fetch (lib/cds-sections.ts SCHEMA_VERSIONS).
           case "${{ steps.params.outputs.reextract }}" in
             C|rest) flags="$flags --reextract --call ${{ steps.params.outputs.reextract }}" ;;

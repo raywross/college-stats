@@ -10,6 +10,7 @@ import { stripReported } from "../lib/reported-merge.ts";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { sameClassYield } from "../lib/derive.ts";
+import { rawInputs } from "../lib/selectivity.ts";
 import type { LineageRecord, ReportedAdmissions, School } from "../lib/types.ts";
 
 const RETRIEVED = "2026-10-03";
@@ -207,4 +208,45 @@ test("mixed-class yield uses the previous class's pair; same-class yield uses th
   const cdsMixed = applyNewest(school({ enrolled: 1700 }, { cds: true }));
   assert.equal(yieldRate(cdsMixed), FEDERAL.enrolled / FEDERAL.admitted);
   assert.equal(yieldRate(school(null)), FEDERAL.enrolled / FEDERAL.admitted);
+});
+
+/* ---- Approximate figures, class goals and deposits never enter the funnel (fall figures, Decision 3) ---- */
+
+test("an approximate-only entry leaves admissions byte-identical and the selectivity inputs unchanged", () => {
+  for (const r of [
+    { applicants: 50000, approx: { applicants: true as const } },
+    { applicants: 50000, admitted: 2500, acceptance_rate: 0.05, approx: { applicants: true as const, admitted: true as const, acceptance_rate: true as const } },
+    { enrollment_target: 1700, deposits: 1850 },
+  ]) {
+    const before = school(r);
+    const after = applyNewest(before);
+    assert.equal(JSON.stringify(after.admissions), JSON.stringify(before.admissions), JSON.stringify(r));
+    assert.equal(JSON.stringify(after.lineage), JSON.stringify(before.lineage));
+    assert.deepEqual(rawInputs(after), rawInputs(before));
+  }
+  // The guard is the flag: the same figures, exact, do replace (so the test above fails if `approx` is ignored).
+  const exact = applyNewest(school({ applicants: 50000, admitted: 2500 }));
+  assert.equal(exact.admissions.applicants, 50000);
+  assert.notDeepEqual(rawInputs(exact), rawInputs(school({ applicants: 50000, admitted: 2500 })), "exact counts move the inputs");
+});
+
+test("exact applicants with approximate admitted: applicants and the year replaced, admitted stays, the rate is the kept-rate record", () => {
+  const r = { applicants: 50000, admitted: 2500, approx: { admitted: true as const } };
+  const s = applyNewest(school(r));
+  assert.equal(s.admissions.applicants, 50000);
+  assert.equal(s.admissions.year, 2026);
+  assert.equal(s.admissions.admitted, FEDERAL.admitted);
+  assert.equal(s.admissions.acceptance_rate, FEDERAL.acceptance_rate);
+  assert.equal(s.lineage!["admissions.admitted"], undefined);
+  assert.deepEqual(s.lineage!["admissions.acceptance_rate"], { source: "ipeds-adm", method: "derived", year: "Fall 2024" });
+  assert.equal(JSON.stringify(restoreFederal(s)), JSON.stringify(school(r)), "restoreFederal still byte-exact");
+});
+
+test("the year moves only with an exact applicants or admitted count; an approximate stated rate never replaces", () => {
+  const s = applyNewest(school({ applicants: 50000, enrolled: 1900, approx: { applicants: true } }));
+  assert.equal(s.admissions.enrolled, 1900, "the exact enrolled count still replaces");
+  assert.equal(s.admissions.applicants, FEDERAL.applicants);
+  assert.equal(s.admissions.year, 2024);
+  const rate = applyNewest(school({ acceptance_rate: 0.03, enrolled: 1900, approx: { acceptance_rate: true } }));
+  assert.equal(rate.admissions.acceptance_rate, FEDERAL.acceptance_rate);
 });

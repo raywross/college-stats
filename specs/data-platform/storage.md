@@ -193,7 +193,9 @@ create function public.data_close_change_set(p_change_set bigint, p_status text,
 create function public.data_read_collection(p_collection text, p_key_prefix text default null) returns setof public.data_documents;
 ```
 Reads from scripts go through PostgREST on the tables directly (select is open); the function exists for callers that
-want one round trip for a whole collection.
+want one round trip for a whole collection. The store reads 1,000 rows a request and, when a page of large documents
+runs past the database's 8-second statement timeout (`reported.cds_records` reached 44 MB in November 2026), halves
+the page from the same offset down to 25 rows (`READ_PAGE`, `MIN_READ_PAGE` in `store.mts`).
 
 ### For the console (security definer, `is_admin()`)
 ```sql

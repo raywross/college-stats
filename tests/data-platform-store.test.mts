@@ -19,9 +19,12 @@ import {
   encodeKey,
   fileStore,
   fileStoreChangeSets,
+  MIN_READ_PAGE,
   orderedJson,
   parseStoreFlag,
   retryable,
+  STATEMENT_TIMEOUT,
+  StoreCallError,
   storeFromFlag,
   supabaseStore,
   type StoreClient,
@@ -209,6 +212,38 @@ test("supabase store: reads page through data_documents 1,000 rows at a time, fi
     ["range", 0, READ_PAGE - 1],
   ]);
   assert.deepEqual(calls[1].ops.at(-1), ["range", READ_PAGE, 2 * READ_PAGE - 1]);
+});
+
+test("supabase store: a read that hits the statement timeout halves its page from the same offset, without waiting", async () => {
+  // 535 large documents (reported.cds_records on 2026-11-12): any page wider than 200 rows times out.
+  const rows = Array.from({ length: 535 }, (_, i) => ({ key: String(100000 + i), version: 1, body: { i } }));
+  const timeout = { message: "canceling statement due to statement timeout", code: STATEMENT_TIMEOUT };
+  const { client, calls } = fakeClient((call) => {
+    const range = call.ops.find((o) => o[0] === "range")!;
+    const [from, to] = [range[1] as number, range[2] as number];
+    if (to - from + 1 > 200) return { data: null, error: timeout };
+    return { data: rows.slice(from, to + 1), error: null };
+  });
+  const log: string[] = [];
+  // waits of a minute each: the test finishing at once proves a timeout is not retried as a flaky call.
+  const store = supabaseStore("u", "k", { client, waits: [60_000, 60_000, 60_000], log: (l) => log.push(l) });
+  const docs = await store.read<{ i: number }>(COLLECTIONS.reported.cdsRecords);
+  assert.equal(docs.size, 535);
+  const ranges = calls.map((c) => c.ops.at(-1)!.slice(1).join("-"));
+  assert.deepEqual(ranges, ["0-999", "0-499", "0-249", "0-124", "125-249", "250-374", "375-499", "500-624"]);
+  assert.deepEqual(log, [
+    "  reading reported.cds_records timed out; reading 500 documents at a time",
+    "  reading reported.cds_records timed out; reading 250 documents at a time",
+    "  reading reported.cds_records timed out; reading 125 documents at a time",
+  ]);
+
+  // At the floor the timeout is the caller's problem, with its code on the error.
+  const always = fakeClient(() => ({ data: null, error: timeout }));
+  const floor = supabaseStore("u", "k", { client: always.client, waits: [0, 0, 0] });
+  await assert.rejects(floor.read(COLLECTIONS.reported.cdsRecords), (err: unknown) => err instanceof StoreCallError && err.code === STATEMENT_TIMEOUT);
+  const widths = always.calls.map((c) => { const r = c.ops.at(-1)!; return (r[2] as number) - (r[1] as number) + 1; });
+  assert.equal(widths.at(-1), MIN_READ_PAGE);
+  assert.ok(widths.every((w, i) => i === 0 || w < widths[i - 1]));
 });
 
 test("supabase store: readOne asks for one row", async () => {

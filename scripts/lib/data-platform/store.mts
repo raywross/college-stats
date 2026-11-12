@@ -54,6 +54,16 @@ export interface ChangeSetHandle {
 }
 
 /** A write whose `expectVersion` didn't match the document's current version (SQLSTATE 40001 in the database). */
+/** A call the store gave up on: `code` is the SQLSTATE or PostgREST code the database answered with ("" for none). */
+export class StoreCallError extends Error {
+  readonly code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = "StoreCallError";
+    this.code = code;
+  }
+}
+
 export class StoreConflictError extends Error {
   readonly collection: string | null;
   readonly key: string | null;
@@ -318,6 +328,16 @@ export const compareKeys = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0
 
 /** Rows per read page (PostgREST's default cap is 1,000). */
 export const READ_PAGE = 1000;
+/**
+ * The smallest page a read falls back to. PostgREST answers under the database role's statement timeout (8 s on
+ * Supabase), and a page of large documents can take longer to serialize than that: `reported.cds_records` was 535
+ * documents and 44 MB when a 1,000-row page first timed out (2026-11-12). On a statement timeout (SQLSTATE 57014) the
+ * read halves its page and asks again from the same offset, down to this floor, instead of waiting and retrying the
+ * same statement.
+ */
+export const MIN_READ_PAGE = 25;
+/** SQLSTATE of "canceling statement due to statement timeout". */
+export const STATEMENT_TIMEOUT = "57014";
 /** Documents per `data_write_documents` call. */
 export const WRITE_CHUNK = 200;
 
@@ -388,8 +408,11 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
     return client;
   };
 
-  /** Runs one call, retrying per `retryable`; throws a StoreConflictError for 40001 and an Error for the rest. */
-  async function call<T>(what: string, run: (c: StoreClient) => PromiseLike<CallResult<T>>): Promise<T | null> {
+  /**
+   * Runs one call, retrying per `retry` (default `retryable`); throws a StoreConflictError for 40001 and a
+   * StoreCallError (carrying the SQLSTATE or PostgREST code) for the rest.
+   */
+  async function call<T>(what: string, run: (c: StoreClient) => PromiseLike<CallResult<T>>, retry: (r: CallResult<T>) => boolean = retryable): Promise<T | null> {
     const c = await getClient();
     for (let attempt = 0; ; attempt++) {
       let result: CallResult<T>;
@@ -400,23 +423,38 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
       }
       if (!result.error) return result.data;
       if (result.error.code === "40001") throw new StoreConflictError(`${what}: ${result.error.message}`);
-      if (attempt >= waits.length || !retryable(result)) throw new Error(`data store: ${what} failed: ${result.error.message}${result.error.code ? ` (${result.error.code})` : ""}`);
+      if (attempt >= waits.length || !retry(result)) throw new StoreCallError(`data store: ${what} failed: ${result.error.message}${result.error.code ? ` (${result.error.code})` : ""}`, result.error.code ?? "");
       opts.log?.(`  ${what} failed (${result.error.message}); retrying in ${Math.round(waits[attempt] / 1000)} s`);
       await new Promise((r) => setTimeout(r, waits[attempt]));
     }
   }
 
+  /** `retryable`, except that a statement timeout is thrown at once: the same statement would time out again. */
+  const retryUnlessTimeout = (r: CallResult<unknown>) => r.error?.code !== STATEMENT_TIMEOUT && retryable(r);
+
   async function readVersioned<T>(collection: string, keyPrefix?: string): Promise<Map<string, { version: number; body: T }>> {
     if (!COLLECTION_NAME.test(collection)) throw new Error(`data store: "${collection}" isn't a collection name`);
     const out = new Map<string, { version: number; body: T }>();
-    for (let from = 0; ; from += READ_PAGE) {
-      const rows = await call<{ key: string; version: number; body: T }[]>(`reading ${collection}`, (c) => {
-        let q = c.from("data_documents").select("key, version, body").eq("collection", collection);
-        if (keyPrefix) q = q.like("key", `${escapeLike(keyPrefix)}%`);
-        return q.order("key", { ascending: true }).range(from, from + READ_PAGE - 1) as unknown as PromiseLike<CallResult<{ key: string; version: number; body: T }[]>>;
-      });
+    type Row = { key: string; version: number; body: T };
+    let page = READ_PAGE;
+    for (let from = 0; ; ) {
+      let rows: Row[] | null;
+      try {
+        rows = await call<Row[]>(`reading ${collection}`, (c) => {
+          let q = c.from("data_documents").select("key, version, body").eq("collection", collection);
+          if (keyPrefix) q = q.like("key", `${escapeLike(keyPrefix)}%`);
+          return q.order("key", { ascending: true }).range(from, from + page - 1) as unknown as PromiseLike<CallResult<Row[]>>;
+        }, retryUnlessTimeout);
+      } catch (err) {
+        // A page of large documents took longer than the statement timeout: halve the page (see MIN_READ_PAGE).
+        if (!(err instanceof StoreCallError) || err.code !== STATEMENT_TIMEOUT || page <= MIN_READ_PAGE) throw err;
+        page = Math.max(MIN_READ_PAGE, Math.floor(page / 2));
+        opts.log?.(`  reading ${collection} timed out; reading ${page} documents at a time`);
+        continue;
+      }
       for (const r of rows ?? []) out.set(r.key, { version: r.version, body: r.body });
-      if ((rows ?? []).length < READ_PAGE) break;
+      if ((rows ?? []).length < page) break;
+      from += page;
     }
     return out;
   }

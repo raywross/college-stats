@@ -71,8 +71,12 @@ export interface JobExpectations {
 
 const MIN = 60_000;
 
-const FALL = [8, 9, 10, 11] as const;
-const CDS_SEASON = [12, 1, 2, 3, 4, 5, 6, 7] as const;
+/** Months of the weekly run: the admits season (March to May) and the census season (August to November). */
+const WEEKLY_SEASONS = [3, 4, 5, 8, 9, 10, 11] as const;
+/** Months of the monthly run: the CDS edition months outside the weekly seasons. */
+const MONTHLY = [12, 1, 2, 6, 7] as const;
+/** The systems season (June and July): a second run on the 15th makes it every two weeks. */
+const SYSTEMS_SEASON = [6, 7] as const;
 
 /** The jobs, Vercel's first, then the scheduled workflows, then the workflows run by hand only. */
 export const JOBS: readonly JobDef[] = [
@@ -139,12 +143,13 @@ export const JOBS: readonly JobDef[] = [
   {
     id: "college-reported",
     name: "College-reported data",
-    description: "Finds and reads each college's Common Data Set and class profile, writes the values to the data store, and asks the publisher for a snapshot.",
+    description: "Finds and reads each college's Common Data Set, class profile and announcements of its newest class, writes the values to the data store, and asks the publisher for a snapshot.",
     runner: "github",
     workflow: "college-reported.yml",
     schedules: [
-      { cron: "0 13 * * 1", months: FALL, note: "Mondays in the fall class-profile season (August to November)." },
-      { cron: "0 13 1 * *", months: CDS_SEASON, note: "The first of the month in the CDS edition season (December to July)." },
+      { cron: "0 13 * * 1", months: WEEKLY_SEASONS, note: "Mondays in the admits (March to May) and census (August to November) seasons." },
+      { cron: "0 13 1 * *", months: MONTHLY, note: "The first of the month from December to February and in June and July." },
+      { cron: "0 13 15 6,7 *", months: SYSTEMS_SEASON, note: "The 15th of June and July: with the 1st, the systems season every two weeks." },
       { cron: "*/30 * * * *", headline: false, note: "Collects a run's open batches; exits at once when none is open." },
     ],
     spec: "specs/college-reported-data.md",

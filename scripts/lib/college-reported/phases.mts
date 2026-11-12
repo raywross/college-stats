@@ -39,7 +39,10 @@ import { compareDocuments } from "../../../lib/cds-records.ts";
 import { MIN_ASSUMED_BODY_CHARS, awaitingFirstRead, callsNeedingRead, editionCurrentOn, fetchOutcome, manifestEntryFor, needsFetch } from "../../../lib/cds-reads.ts";
 import { citeAnswer, type NumberedLine } from "../../../lib/cds-quotes.ts";
 import { applyChecks, circuitBreakerV3, dropPassed, escalationFor, failedC1Count, itemFailureShares, reviewItemsFor } from "../../../lib/cds-checks.ts";
-import { runChecks, toReportedEntry } from "../../../lib/reported-checks.ts";
+import { normalizeExtraction } from "../../../lib/reported-checks.ts";
+import { combineByTerm, type Candidate } from "../../../lib/reported-combine.ts";
+import { inSeasonScope, noticePatterns, reclassifyDated, type Season } from "../../../lib/seasons.ts";
+import { dateInUrl, isStudentPaper, manualNoticeSource, noticeLinksFromPage, noticeSource } from "./notices.mts";
 import { recordFromTemplate } from "../cds-xlsx.mts";
 import { readFormPdf } from "./form-pdf.mts";
 import { editionFromBody, editionFromUrl, layoutDocument, type CDSplit, type EditionFound, type LineRange } from "./layout.mts";
@@ -52,7 +55,7 @@ import { recordBlocked } from "./blocked.mts";
 import { confirmDocument, freeSteps, magicFormat, rewriteShareLink, sourcesFromPage, type Prefetched, type ProbePage, type StepFind } from "./probe.mts";
 import { STEP_ESTIMATE_USD, ladder, orderColleges, replaceUnlisted, retireSuperseded, shouldRetry, stepsFor, type LadderCollege, type LadderDeps, type LadderResult, type LadderState, type PaidFind } from "./discovery.mts";
 import { buildEscalationRequests, buildPickerRequests, buildRequests, collect, customId, openReservations, parseCustomId, projection, projectionGuard, resubmitOnce, submit, trimToCap, type BatchApi, type BatchRequest, type Collected, type PendingDocument } from "./batch.mts";
-import { discover, extract, parsePickerResponse, pickLinks, searchOnly, type CallContext, type LlmContext, type PageLink, type PickResult } from "./llm.mts";
+import { discover, extract, parsePickerResponse, pickLinks, searchNotice, searchOnly, type CallContext, type LlmContext, type NoticeCandidate, type PageLink, type PickResult } from "./llm.mts";
 import { callLogRow, callRecorder, emptyUsage, memoryCallLogWriter, roundUsd, summaryCost, type CallLogWriter, type ModelClient } from "./models.mts";
 import { parseExtractResponse } from "./llm.mts";
 import { tierOf } from "./pilot.mts";
@@ -137,6 +140,19 @@ export interface Round3Options {
   openAdmissionLeftover?: boolean;
   /** Full-run colleges ÷ this run's colleges, for the projection's full-run figure (default 1). */
   scale?: number;
+  /**
+   * The discovery season this run looks in (specs/college-reported-fall-figures.md Decision 4; the CLI's `--season`,
+   * default `seasonOn(today)`), or null/absent for none: no reclassification, no news-index scan, no notice search.
+   */
+  season?: Season | null;
+  /** Dollars the season's notice searches may spend this run (default `defaultSeasonBudget`), within `maxCost`. */
+  seasonBudget?: number;
+}
+
+/** Decision 5's season budget: $0.10 per college in scope this run, never more than the run's cap. */
+export const SEASON_USD_PER_COLLEGE = 0.1;
+export function defaultSeasonBudget(schools: readonly School[], maxCost: number): number {
+  return roundUsd(Math.min(maxCost, SEASON_USD_PER_COLLEGE * schools.filter((s) => inSeasonScope(s)).length));
 }
 
 export interface Round3Result {
@@ -294,7 +310,8 @@ export function c1FromDocument(doc: DocumentRecord): Extraction | null {
 
 const VALUE_KEYS = ["applicants", "admitted", "enrolled", "acceptance_rate"] as const;
 const countValues = (e: ReportedEntry) => VALUE_KEYS.filter((k) => e.admissions[k] !== null).length;
-const hasFigures = (e: Extraction | null | undefined): e is Extraction => !!e && VALUE_KEYS.some((k) => e[k] !== null);
+/** A read that states anything combineByTerm can publish: a count, a rate, a class goal, or deposits. */
+const hasFigures = (e: Extraction): boolean => VALUE_KEYS.some((k) => e[k] !== null) || e.enrollment_target !== null || e.deposits !== null;
 function changedValues(prev: ReportedEntry | undefined, next: ReportedEntry): number {
   if (!prev || prev.admissions.entering_term !== next.admissions.entering_term) return 0;
   return VALUE_KEYS.filter((k) => prev.admissions[k] !== null && prev.admissions[k] !== next.admissions[k]).length;
@@ -328,6 +345,30 @@ export async function profileInput(bytes: Uint8Array, anchor: string, hint?: num
   }
   const text = htmlToText(new TextDecoder().decode(bytes));
   return text.toLowerCase().includes(anchor.toLowerCase()) ? { text: windowAround(text, anchor) } : {};
+}
+
+/**
+ * What the extractor reads from a notice (specs/college-reported-fall-figures.md Decision 5, step 2): its text windowed
+ * around the first of the term's tokens it contains (lib/seasons.ts `noticePatterns(term).tokens`, most specific first;
+ * "appl" isn't used), 60,000 characters as for a class profile. No token anywhere in the text: `noTerm`, and the
+ * notice is recorded read with no model call. A scanned PDF (no text to look in) is sent as a PDF, as a profile is.
+ */
+export async function noticeInput(bytes: Uint8Array, term: string, hint?: number[]): Promise<{ text?: string; pdfBase64?: string; noTerm?: true }> {
+  const { tokens } = noticePatterns(term);
+  if (magicFormat(bytes) === "pdf") {
+    const pages = await pdfPages(bytes);
+    const chars = pages.reduce((n, p) => n + p.trim().length, 0);
+    if (chars < SCANNED_TEXT_CHARS) return pages.length <= 100 ? { pdfBase64: Buffer.from(bytes).toString("base64") } : {};
+    const all = pages.join("\n").toLowerCase();
+    const token = tokens.find((t) => all.includes(t));
+    if (!token) return { noTerm: true };
+    const which = selectPages(pages, hint, token);
+    return which.length ? { text: pagesText(pages, which) } : { noTerm: true };
+  }
+  const text = htmlToText(new TextDecoder().decode(bytes));
+  const lower = text.toLowerCase();
+  const token = tokens.find((t) => lower.includes(t));
+  return token ? { text: windowAround(text, token) } : { noTerm: true };
 }
 
 /**
@@ -478,45 +519,52 @@ export function createRound3(deps: Round3Deps) {
     /* ---------------- C1 publishing (round 2's file, unchanged) ---------------- */
 
     /**
-     * Publishes the newest passing C1 for a college through data/college-reported.json (round 2's path and checks):
-     * from its CDS records' passed C1 totals and from its class-profile extractions. Round 2's seven checks decide.
+     * Publishes the newest college-reported funnel through `reported.entries`: candidates from its CDS records' passed C1
+     * totals, its class-profile reads and its notices' reads, combined by term (lib/reported-combine.ts; spec
+     * college-reported-fall-figures.md Decision 2: every document naming the newest term contributes, each figure citing
+     * its own). What failed a check for that term or a newer one (not merely "no newer than federal") is queued, one
+     * review item per document.
      */
     function publishC1(school: School) {
       const recipe = recipes.get(school.unit_id);
-      const candidates: { e: Extraction; url: string; kind: "cds" | "class-profile"; retrieved: string }[] = [];
+      const candidates: Candidate[] = [];
       for (const doc of docsOf(school.unit_id)) {
         const e = c1FromDocument(doc);
         if (e) candidates.push({ e, url: doc.final_url ?? doc.url, kind: "cds", retrieved: doc.retrieved });
       }
       for (const s of recipe?.sources ?? []) {
-        if (s.kind === "class-profile" && hasFigures(s.extraction)) candidates.push({ e: s.extraction, url: s.url, kind: "class-profile", retrieved: s.processed ?? today });
+        if (s.kind === "cds" || !s.extraction) continue;
+        // A stored read from before the fall-figures schema lacks qualifiers, the class goal and deposits: all exact, null.
+        const e = normalizeExtraction(s.extraction);
+        if (hasFigures(e)) candidates.push({ e, url: s.url, kind: s.kind, retrieved: s.processed ?? today, ...(s.published ? { published: s.published } : {}) });
       }
       if (!candidates.length) return;
-      const extractions = candidates.map((c) => c.e);
-      const judged = candidates.map((c) => ({ ...c, failures: runChecks(c.e, school, extractions) }));
-      const newest = (a: (typeof judged)[number], b: (typeof judged)[number]) =>
-        (fallYear(b.e.entering_term) ?? 0) - (fallYear(a.e.entering_term) ?? 0) || VALUE_KEYS.filter((k) => b.e[k] !== null).length - VALUE_KEYS.filter((k) => a.e[k] !== null).length || (a.kind === "cds" ? -1 : 1);
-      const passing = judged.filter((j) => !j.failures.length).sort(newest);
-      // Round 2's whole-college C1 entry (no code) is replaced or dropped; round 3's per-item entries stay.
-      // Fetch failures aren't C1 judgments: `acquire` re-evaluates them each time it fetches the college's sources.
-      const c1Key = (q: ReviewItem) => q.unit_id === school.unit_id && !q.code && !isFetchFailure(q);
-      if (passing.length) {
-        const best = passing[0];
-        const entry = toReportedEntry(best.e, school, { url: best.url, kind: best.kind, retrieved: best.retrieved, page: best.e.page }, opts.run);
-        state.queue = { updated: today, items: state.queue.items.filter((q) => !c1Key(q)) };
-        const prev = entries.get(school.unit_id);
-        if (prev && JSON.stringify(prev.admissions) === JSON.stringify(entry.admissions)) return;
-        summary.changed += changedValues(prev, entry);
-        summary.published++;
-        summary.tiers[tierOf(school) as ReportedTier].published_c1++;
-        entries.set(school.unit_id, entry);
-        log(`${school.name}: published C1 ${entry.admissions.entering_term} (${entry.admissions.source_kind}): ${entry.admissions.applicants ?? "–"} applied, ${entry.admissions.admitted ?? "–"} admitted`);
+      const combined = combineByTerm(candidates, school, opts.run, today);
+      // The whole-college C1 items (no code) are replaced by this judgment; round 3's per-item entries stay. Fetch
+      // failures aren't C1 judgments (`acquire` re-evaluates them), and an item a person resolved stays as they left it.
+      const c1Key = (q: ReviewItem) => q.unit_id === school.unit_id && !q.code && !isFetchFailure(q) && !q.resolved;
+      let items = state.queue.items.filter((q) => !c1Key(q));
+      if (combined.failures.length) {
+        // One enqueue for every failing document: they share the college's C1 key, so one at a time would replace each other.
+        items = enqueueItems(
+          items,
+          combined.failures.map((f) => ({ unit_id: school.unit_id, name: school.name, urls: [f.url], entering_term: f.e.entering_term, failures: f.failures, queued: today, run: opts.run, extraction: f.e }))
+        );
+      }
+      state.queue = { updated: today, items };
+      const entry = combined.entry;
+      if (!entry) {
+        if (combined.failures.length) summary.failed++;
         return;
       }
-      const real = judged.filter((j) => !j.failures.every((f) => f.check === "newer-than-federal")).sort(newest);
-      if (!real.length) return;
-      summary.failed++;
-      queueOne(school, school.unit_id, [real[0].url], real[0].failures, { entering_term: real[0].e.entering_term, extraction: real[0].e });
+      const prev = entries.get(school.unit_id);
+      if (prev && JSON.stringify(prev.admissions) === JSON.stringify(entry.admissions) && JSON.stringify(prev.lineage) === JSON.stringify(entry.lineage)) return;
+      summary.changed += changedValues(prev, entry);
+      summary.published++;
+      summary.tiers[tierOf(school) as ReportedTier].published_c1++;
+      entries.set(school.unit_id, entry);
+      const a = entry.admissions;
+      log(`${school.name}: published C1 ${a.entering_term} (${a.source_kind}): ${a.applicants ?? "–"}${a.approx?.applicants ? "~" : ""} applied, ${a.admitted ?? "–"}${a.approx?.admitted ? "~" : ""} admitted, ${a.enrolled ?? "–"}${a.approx?.enrolled ? "~" : ""} enrolled`);
     }
 
     /* ---------------- fetch, archive, type, read ---------------- */
@@ -638,6 +686,11 @@ export function createRound3(deps: Round3Deps) {
           const stored = await deps.archive.get(known.sha256);
           if (stored) return readKnown(school, src, known, stored, false);
         }
+        // Fall figures Decision 4: a notice is a dated release; once read it isn't requested again (no monthly GET).
+        if (src.kind === "notice" && known && !pending) {
+          summary.documents[known.type].unchanged++;
+          return { state: "unchanged" };
+        }
         // Never read and not in the archive: fetch it in full (a conditional GET could answer 304 with no bytes).
         const d: { fetch: boolean; conditional?: { etag?: string; last_modified?: string } } = pending ? { fetch: true, conditional: {} } : needsFetch(known, { etag: src.etag, last_modified: src.last_modified, lastChecked: src.checked ?? null, today, indexChanged: o.indexChanged });
         if (!d.fetch) {
@@ -685,7 +738,8 @@ export function createRound3(deps: Round3Deps) {
       // A new document: archive it before anything reads it, so no later read ever needs the college's site.
       try {
         src.format = detectFormat(bytes, null, src.url);
-        const typed = src.kind === "class-profile" ? { type: "class-profile" as const } : await typeOfDocument(bytes);
+        // A notice is archived and read as a class profile (lib/cds-sections.ts: DocumentType has no "notice").
+        const typed = src.kind === "class-profile" || src.kind === "notice" ? { type: "class-profile" as const } : await typeOfDocument(bytes);
         const type: DocumentType = typed.type;
         const location = await deps.archive.put(sha, bytes, extOf(type));
         const counts = summary.documents[type];
@@ -762,8 +816,11 @@ export function createRound3(deps: Round3Deps) {
       const reads: SourceRead[] = [];
       const cdsUnreachable: { url: string; detail: string }[] = [];
       for (const src of recipe.sources) {
-        if (fetchedThisRun.has(src.url)) continue;
-        fetchedThisRun.add(src.url);
+        // A notice can serve several colleges (the UC system sheet, Decision 9): keyed by college, so each campus reads
+        // it (the second from the archive, without a request).
+        const key = src.kind === "notice" ? `${school.unit_id} ${src.url}` : src.url;
+        if (fetchedThisRun.has(key)) continue;
+        fetchedThisRun.add(key);
         const r = await acquireSource(school, src, { prefetched: o.prefetched ?? new Map(), indexChanged: !!o.indexChanged });
         reads.push(r);
         if (r.state === "unreachable" || r.state === "problem") log(`  ${school.name}: ${r.detail}`);
@@ -802,6 +859,163 @@ export function createRound3(deps: Round3Deps) {
       }
     }
 
+    /* ---------------- seasons: fall figures (specs/college-reported-fall-figures.md) ---------------- */
+
+    const season = opts.season ?? null;
+    /** Colleges that gained a notice for the season's term this run (a news-index scan or a search). */
+    const seasonFound = new Set<string>();
+    /** The owner's list without its notices: a new notice entry is added to the recipe directly, not by re-running discovery. */
+    const manualCds = state.manual.filter((e) => e.kind !== "notice");
+
+    /** The owner's notice entries (the reference document `cds-urls`, kind "notice") for this college, added at once. */
+    function addManualNotices(school: School, recipe: Recipe) {
+      const known = new Set(recipe.sources.map((s) => s.url));
+      const fresh = withoutDropped(
+        state.manual.filter((e) => e.unit_id === school.unit_id && e.kind === "notice" && !known.has(e.url)).map(manualNoticeSource),
+        recipe.dropped
+      );
+      for (const s of fresh) log(`  ${school.name}: notice from the owner's list (${s.term}): ${s.url}`);
+      if (fresh.length) recipe.sources = [...fresh, ...recipe.sources];
+    }
+
+    /** Adds notice links found on a page as sources (newest first); returns how many were new. */
+    function addNotices(school: School, recipe: Recipe, fresh: RecipeSource[], where: string): number {
+      const known = new Set(recipe.sources.map((s) => s.url));
+      const add = withoutDropped(fresh, recipe.dropped).filter((s) => !known.has(s.url));
+      for (const s of add) log(`  ${school.name}: notice for ${s.term} (${s.found_by}) from ${where}: ${s.url}`);
+      if (add.length) {
+        recipe.sources = [...add, ...recipe.sources];
+        seasonFound.add(school.unit_id);
+      }
+      return add.length;
+    }
+
+    /** URLs a notice scan must not offer again: the recipe's sources and what a person dropped. */
+    const notOffered = (recipe: Recipe, more: RecipeSource[] = []) => [...recipe.sources, ...more].map((s) => s.url).concat((recipe.dropped ?? []).map((d) => d.url));
+
+    /**
+     * A season pass's free part (Decisions 1, 5 step 0, 6, 7), every run in a season: a college in scope has its dated
+     * class-profile URLs reclassified as notices once; each of its `news_index_urls` is fetched and its links naming the
+     * season's term become notice sources (found_by "index"), fetched by `acquire` like class profiles. A college outside
+     * the four tiers whose news index is already known is scanned too (Decision 6), never searched.
+     */
+    async function seasonPrepare(school: School, recipe: Recipe) {
+      if (!season) return;
+      const scoped = inSeasonScope(school);
+      if (!scoped && !recipe.news_index_urls?.length) return;
+      if (scoped) {
+        const re = reclassifyDated(recipe.sources, today);
+        if (re.changed) {
+          re.sources.forEach((s, i) => {
+            if (s !== recipe.sources[i]) log(`  ${school.name}: ${s.url} names a past class; reclassified as a notice of ${s.term}`);
+          });
+          recipe.sources = re.sources;
+        }
+      }
+      for (const idx of recipe.news_index_urls ?? []) {
+        const page = await fetchPage(idx);
+        if (!page) {
+          log(`  ${school.name}: news index ${idx} didn't answer`);
+          continue;
+        }
+        const links = noticeLinksFromPage(page.html, page.url, season.term, { exclude: notOffered(recipe) });
+        addNotices(school, recipe, links.map((l) => noticeSource(l, season.term, "index")), idx);
+      }
+    }
+
+    /** Whether a recipe already holds the term: a source naming it (a notice, a class-profile read) or a CDS edition for it. */
+    function holdsTerm(recipe: Recipe, unitId: string, term: string): boolean {
+      const year = fallYear(term);
+      if (recipe.sources.some((s) => s.term === term || (year !== null && fallYear(s.extraction?.entering_term) === year))) return true;
+      if (state.manifest.documents.some((d) => d.unit_id === unitId && d.kind === "cds" && d.edition && Number(d.edition.slice(0, 4)) === year)) return true;
+      return docsOf(unitId).some((d) => d.years?.fall === term);
+    }
+
+    /**
+     * Colleges due a paid notice search this season (Decision 5 step 1, Decision 10): in scope, with a recipe that holds
+     * nothing for the term, and not already searched for this term this season (the per-season back-off; round 3's
+     * `shouldRetry` stays the CDS ladder's rule). In `orderColleges` order.
+     */
+    function seasonDue(colleges: readonly School[]): School[] {
+      if (!season) return [];
+      return orderColleges(colleges.filter((s) => inSeasonScope(s))).filter((s) => {
+        const r = recipes.get(s.unit_id);
+        if (!r) return false;
+        if (r.seasons?.[season.key]?.term === season.term) return false;
+        return !holdsTerm(r, s.unit_id, season.term);
+      });
+    }
+
+    /**
+     * Follows what a notice search named, as `follow` does for the CDS ladder: a notice is checked (a 404 is dropped,
+     * the bytes are kept for the read), a news-index page is fetched and scanned for notices and remembered on
+     * `news_index_urls` (Decision 7). Student newspapers are dropped (Decision 9).
+     */
+    async function followNotices(school: School, recipe: Recipe, cands: NoticeCandidate[]): Promise<{ sources: RecipeSource[]; prefetched: Map<string, Prefetched> }> {
+      const term = season!.term;
+      const sources: RecipeSource[] = [];
+      const prefetched = new Map<string, Prefetched>();
+      for (const c of cands) {
+        if (isStudentPaper(c.url)) {
+          log(`  ${school.name}: ${c.url} is a student newspaper; never a source`);
+          continue;
+        }
+        if (c.kind === "notice") {
+          if (notOffered(recipe, sources).includes(c.url)) continue;
+          const link = await checkLink(c.url);
+          if (link.dead) continue;
+          if (link.got) prefetched.set(c.url, link.got);
+          const src = noticeSource({ url: c.url, published: dateInUrl(c.url) }, term, "season");
+          if (link.got?.format === "pdf" && src.format !== "pdf") Object.assign(src, { format: "pdf", form: "pdf" });
+          sources.push(src);
+          continue;
+        }
+        const page = await fetchPage(c.url);
+        if (!page) continue;
+        recipe.news_index_urls = [...new Set([...(recipe.news_index_urls ?? []), page.url])];
+        for (const l of noticeLinksFromPage(page.html, page.url, term, { exclude: notOffered(recipe, sources) })) sources.push(noticeSource(l, term, "index"));
+      }
+      return { sources, prefetched };
+    }
+
+    /** The paid part of a season pass, after the CDS ladder's: one notice search per due college, within the season budget. */
+    async function seasonPhase(colleges: readonly School[]) {
+      if (!season || !summary.season) return;
+      const due = seasonDue(colleges);
+      const s = summary.season;
+      for (const [i, school] of due.entries()) {
+        if (stopReason) break;
+        const left = Math.min(s.budget_usd - s.spent_usd, opts.maxCost - spent());
+        if (left < STEP_ESTIMATE_USD[3]) {
+          log(`Season ${season.key}: the season budget is spent ($${s.spent_usd.toFixed(2)} of $${s.budget_usd.toFixed(2)}); ${due.length - i} college(s) wait for the next run`);
+          break;
+        }
+        const recipe = structuredClone(recipes.get(school.unit_id)!);
+        const before = costBy.get(school.unit_id) ?? 0;
+        let cands: NoticeCandidate[];
+        try {
+          cands = (await searchNotice(callCtx, school, season)).candidates;
+        } catch (err) {
+          s.spent_usd = roundUsd(s.spent_usd + paidCost(school.unit_id, before));
+          log(`  ${school.name}: notice search: ${errText(err)}`);
+          continue;
+        }
+        s.spent_usd = roundUsd(s.spent_usd + paidCost(school.unit_id, before));
+        s.searched = (s.searched ?? 0) + 1;
+        const got = await followNotices(school, recipe, cands);
+        const found = addNotices(school, recipe, got.sources, "a notice search") > 0;
+        recipe.seasons = { ...recipe.seasons, [season.key]: { term: season.term, checked: today, found } };
+        if (!found) log(`  ${school.name}: no notice for ${season.term} found this ${season.key} season`);
+        recipes.set(school.unit_id, recipe);
+        if (found) {
+          await acquire(school, recipe, { prefetched: got.prefetched });
+          publishC1(school);
+        }
+        progress();
+      }
+      s.found = seasonFound.size;
+    }
+
     async function prepareCollege(school: School) {
       const tier = tierOf(school) as ReportedTier;
       summary.tiers[tier].colleges++;
@@ -809,6 +1023,7 @@ export function createRound3(deps: Round3Deps) {
       let recipe = stored ? structuredClone(stored) : undefined;
       let indexChanged = false;
       let brokenIndex = false;
+      if (recipe) addManualNotices(school, recipe);
       if (recipe && !opts.rediscover) {
         // Index pages: re-scanned for a newer link (Decision 10). "Changed" means the set of document links changed.
         for (const idx of recipe.index_urls) {
@@ -840,9 +1055,10 @@ export function createRound3(deps: Round3Deps) {
             log(`  ${idx}: ${errText(err)}`);
           }
         }
+        await seasonPrepare(school, recipe);
       }
       let prefetched = new Map<string, Prefetched>();
-      if (!recipe || opts.rediscover || shouldRetry(recipe, today, { unitId: school.unit_id, manual: state.manual, brokenIndex })) {
+      if (!recipe || opts.rediscover || shouldRetry(recipe, today, { unitId: school.unit_id, manual: manualCds, brokenIndex })) {
         const ls: LadderState = { ...ladderState, only: "free" };
         const r = await ladder({ school, recipe: opts.rediscover ? undefined : recipe }, ls, freeSteps(http, state.manual));
         ladderState.blocked = mergeBlocked(ladderState.blocked, ls.blocked);
@@ -1154,7 +1370,7 @@ export function createRound3(deps: Round3Deps) {
         if (ids && !ids.has(r.unit_id)) continue;
         const school = byId.get(r.unit_id);
         if (!school) continue;
-        for (const src of r.sources) if (src.kind === "class-profile" && src.sha256 && src.extraction === undefined) out.push({ school, src });
+        for (const src of r.sources) if ((src.kind === "class-profile" || src.kind === "notice") && src.sha256 && src.extraction === undefined) out.push({ school, src });
       }
       return out;
     }
@@ -1186,9 +1402,11 @@ export function createRound3(deps: Round3Deps) {
           const bytes = await deps.archive.get(src.sha256!);
           if (!bytes) continue;
           const anchor = src.anchor ?? DEFAULT_ANCHORS[src.kind];
-          let input: { text?: string; pdfBase64?: string };
+          // A notice is windowed around its term, not "appl" (fall figures Decision 5, step 2).
+          const term = src.kind === "notice" ? (src.term ?? season?.term ?? `Fall ${today.slice(0, 4)}`) : undefined;
+          let input: { text?: string; pdfBase64?: string; noTerm?: true };
           try {
-            input = await profileInput(bytes, anchor, src.pages);
+            input = term ? await noticeInput(bytes, term, src.pages) : await profileInput(bytes, anchor, src.pages);
           } catch (err) {
             log(`  ${school.name}: class profile ${src.url}: ${errText(err)}`);
             continue;
@@ -1199,6 +1417,8 @@ export function createRound3(deps: Round3Deps) {
             src.read_as = "pdf";
           } else if (src.format === "pdf") src.format = "html";
           if (!input.text && !input.pdfBase64) {
+            // Recorded read with nothing in it; a notice without its term is `notice_no_term` in the failures list.
+            if (input.noTerm) log(`  ${school.name}: notice ${src.url} doesn't name ${term}; not read`);
             src.extraction = null;
             src.processed = today;
             progress();
@@ -1215,8 +1435,10 @@ export function createRound3(deps: Round3Deps) {
             },
           };
           try {
-            src.extraction = await extract({ client: recording, usage: emptyUsage(), today, log }, school, { kind: "class-profile", url: src.url, ...input }, { model: REPORTED_MODELS.extraction, job: "extraction" });
+            src.extraction = await extract({ client: recording, usage: emptyUsage(), today, log }, school, { kind: src.kind, url: src.url, ...(term ? { term } : {}), ...(input.text !== undefined ? { text: input.text } : {}), ...(input.pdfBase64 ? { pdfBase64: input.pdfBase64 } : {}) }, { model: REPORTED_MODELS.extraction, job: "extraction" });
             src.processed = today;
+            // The read names the term the notice describes (its release date isn't it).
+            if (src.kind === "notice" && fallYear(src.extraction.entering_term) !== null) src.term = src.extraction.entering_term!;
             summary.documents_read++;
             attempted.add(school.unit_id);
             publishC1(school);
@@ -1434,9 +1656,11 @@ export function createRound3(deps: Round3Deps) {
       }
       const capped = paid.slice(0, opts.maxDiscoveries ?? 100);
       const steps = (s: School) => stepsFor(tierOf(s), { pass: "main" });
+      // A season's notice searches: the due colleges, no more than its budget buys at the step-3 estimate.
+      const seasonSearches = only || !summary.season ? 0 : Math.min(seasonDue(targets).length, Math.floor(Math.max(0, summary.season.budget_usd - summary.season.spent_usd) / STEP_ESTIMATE_USD[3]));
       const discovery = {
         picker: capped.filter((c) => steps(c.school).includes(2)).length,
-        search: capped.filter((c) => steps(c.school).includes(3) || (opts.openAdmissionLeftover && tierOf(c.school) === "open admission")).length,
+        search: capped.filter((c) => steps(c.school).includes(3) || (opts.openAdmissionLeftover && tierOf(c.school) === "open admission")).length + seasonSearches,
         full: capped.filter((c) => steps(c.school).includes(4)).length,
       };
       return projection({ documents, discovery, scale: opts.scale ?? 1 });
@@ -1449,6 +1673,13 @@ export function createRound3(deps: Round3Deps) {
     const order = new Map(orderColleges(targets).map((s, i) => [s.unit_id, i]));
     const phase = opts.phase;
     let guardMessage: string | null = null;
+    if (season && !opts.reextract && phase !== "collect") {
+      const budget = roundUsd(Math.min(opts.maxCost, opts.seasonBudget ?? defaultSeasonBudget(targets, opts.maxCost)));
+      const colleges = targets.filter((s) => inSeasonScope(s)).length;
+      const same = summary.season?.key === season.key && summary.season.term === season.term;
+      summary.season = same ? { ...summary.season!, budget_usd: budget, colleges } : { key: season.key, term: season.term, budget_usd: budget, spent_usd: 0, colleges, searched: 0, found: 0 };
+    }
+    const seasonWords = () => (summary.season ? `; season ${summary.season.key} (${summary.season.term}), budget $${summary.season.budget_usd.toFixed(2)} for ${summary.season.colleges} college(s) in scope` : "; no season");
 
     try {
       if (opts.reextract) {
@@ -1467,7 +1698,7 @@ export function createRound3(deps: Round3Deps) {
         const needsPaid = phase === "all" ? forPaid : phase === "discover" ? targets.filter((s) => shouldRetry(recipes.get(s.unit_id), today, { unitId: s.unit_id, manual: state.manual })).map((s) => ({ school: s, recipe: recipes.get(s.unit_id) })) : [];
         if (phase !== "collect") {
           summary.projection = computeProjection(ids, phase === "prepare" || phase === "all" ? forPaid : needsPaid);
-          log(`Projection: $${(summary.projection.run_usd ?? summary.projection.full_run_usd).toFixed(2)} this run, $${summary.projection.full_run_usd.toFixed(2)} for the full run (${summary.projection.basis})`);
+          log(`Projection: $${(summary.projection.run_usd ?? summary.projection.full_run_usd).toFixed(2)} this run, $${summary.projection.full_run_usd.toFixed(2)} for the full run (${summary.projection.basis})${seasonWords()}`);
           progress();
         }
         if (phase !== "prepare" && phase !== "collect" && !stopReason) {
@@ -1477,6 +1708,7 @@ export function createRound3(deps: Round3Deps) {
         }
         if (!guardMessage && !stopReason) {
           if (phase === "discover" || phase === "all") await discoverPhase(needsPaid, phase === "all");
+          if (!stopReason && (phase === "discover" || phase === "all")) await seasonPhase(targets);
           if (!stopReason && (phase === "submit" || phase === "all")) await submitPhase(ids, order);
           if (!stopReason && (phase === "collect" || phase === "all")) await collectPhase(order);
         }
@@ -1488,6 +1720,7 @@ export function createRound3(deps: Round3Deps) {
     /* ---------------- finish ---------------- */
 
     summary.attempted += attempted.size;
+    if (summary.season) summary.season.found = Math.max(summary.season.found, seasonFound.size);
     const touched = [...touchedDocs.values()];
     const touchedRecords = [...new Set([...attempted])].map((id) => state.records.get(id)).filter((r): r is CollegeRecord => !!r);
     const tripped = circuitBreakerV3({ attempted: summary.attempted, failedC1: failedC1Count(touchedRecords, table), itemFailureShares: itemFailureShares(touched, table), changed: summary.changed, priorValues });

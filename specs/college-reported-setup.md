@@ -369,6 +369,51 @@ the projection, documents by type, and the blocked colleges.
 The PR body's "Blocked colleges" list names the colleges every candidate host refused. Add links you find by hand to
 `data/reference/cds-urls.json` (§10) before the full run.
 
+## 13. Fall figures: seasons, notices, and the news index
+Colleges announce their newest class months before its CDS ([college-reported-fall-figures.md](college-reported-fall-figures.md)).
+Each such page is a **notice** on the recipe; three **seasons** look for them, for the top four selectivity tiers.
+
+**Flags** (`scripts/sync-college-reported.mts`):
+- `--season auto|none|admits|systems|census`, default `auto`: the season today falls in (lib/seasons.ts `seasonOn`:
+  admits Mar 15–May 15, systems Jun 1–Jul 31, census Aug 15–Nov 15; the term is "Fall <this year>"), or none outside
+  them. `none` turns every season step off; a key forces that season (the catch-up). The run's first line and its
+  projection line name the season and its budget.
+- `--season-budget <usd>`, default $0.10 × the colleges in scope this run, never more than `--max-cost`. Only the
+  notice searches spend it; the run stops searching when it is spent (the rest wait for the next run).
+
+**What a run does in a season**, for each college in scope (elite, highly selective, very selective, selective; a
+college without a tier counts by an admit rate under 50%):
+1. Free: a class-profile URL that names a past year or class is reclassified as a notice of that term (once; logged).
+   Each page on the recipe's `news_index_urls` is fetched and its links naming the term (`Fall 2026`, `Class of 2030`,
+   or the year with an announcement phrase) become notice sources, at most three per page, newest first. A college in
+   a lower tier is scanned too when its news index is already known; it is never searched.
+2. Paid (~$0.05–0.08): a college whose recipe holds nothing for the term (no notice, no class-profile read naming it,
+   no CDS edition for it) and that this season hasn't searched for the term gets one search (Sonnet, two web searches,
+   no fetch). The pages it names are checked by our code (a 404 is dropped); a news listing it names is scanned and
+   kept on `news_index_urls`, so later seasons find the next announcement for free. The recipe records
+   `seasons.<key> = { term, checked, found }`; the college isn't searched again for that term that season.
+3. Each new notice is fetched (robots.txt governs, as for class profiles) and read by Haiku, windowed around the term;
+   a page that doesn't name the term is recorded without a model call (`notice_no_term` in the failures list). Once
+   read, a notice is never requested again.
+4. Every document naming the newest term (CDS, class profile, notices) combines into one funnel, each figure citing
+   its own page; a CDS for the term wins outright.
+
+The run summary's `season` block holds the key, term, budget, spent, colleges in scope, colleges searched, and colleges
+that gained a notice; the search calls are in the `search` rows of `usage_rows`. Failures list codes:
+`notice_no_term`, `notice_no_figures`, `season_none_found` (apply
+`supabase/migrations/20261111120000_failure_reasons_fall_figures.sql` before the first publish that carries them).
+
+**A notice by hand.** An entry in the owner's list (`cds-urls`, §10) with `kind: "notice"` becomes a notice source on
+the next run (`found_by: "manual"`), without re-running discovery. Its term comes from the entry's `note`
+("UC system fact sheet, Fall 2026"), else its URL, else the year it was added; a note that says "system" marks a
+system fact sheet, read for the named campus's own row. The same URL may be listed for several colleges.
+
+**Schedule.** The workflow's "Check schedule window" step keeps three crons in step with the seasons: the Monday cron
+proceeds March–May and August–November (admits and census, weekly); the 1st-of-month cron proceeds December–February
+and June–July; the 15th-of-June-and-July cron (`0 13 15 6,7 *`) proceeds only then, so the systems season runs every
+two weeks. Which season a run looks in is the script's `--season auto`; **Run workflow** has a `season` input (auto,
+none, admits, systems, census) for a catch-up or to turn it off.
+
 ## What to check in your own tests
 - [ ] A profile for a college with a published `reported` value shows the chip/popover next to the federal figure,
   with the verbatim quote, the source link, and "checked automatically" (see

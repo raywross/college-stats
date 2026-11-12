@@ -19,6 +19,7 @@ import type { ReportedSourceKind, School } from "../../../lib/types";
 import { blockedStatusOf, type BlockedObservation } from "./blocked.mts";
 import { decodeEntities, entryYearOf, findLinks, newSourcesFromIndex, newSourcesFromLinks, type FoundLink } from "./documents.mts";
 import { guessNextEditionUrls } from "./guess.mts";
+import { manualNoticeSource } from "./notices.mts";
 
 /* ------------------------------------------------------------------ */
 /* Shapes shared with the ladder (./discovery.mts)                     */
@@ -425,6 +426,8 @@ export async function knownStep(http: ProbeHttp, c: KnownInput, o: { limit?: num
   const mine = (c.manual ?? []).filter((e) => e.unit_id === c.school.unit_id);
   if (mine.length) {
     const sources: RecipeSource[] = mine.map((e) => {
+      // A notice on the owner's list (fall figures: the UC system sheet) is a dated announcement, never a share link.
+      if (e.kind === "notice") return manualNoticeSource(e);
       const rw = rewriteShareLink(e.url);
       const url = rw && "url" in rw ? rw.url : e.url;
       return { kind: e.kind, url, format: formatFromUrl(url, e.kind) };

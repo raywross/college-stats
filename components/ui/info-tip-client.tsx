@@ -58,6 +58,7 @@ function sourceKindPhrase(cited: AnyCited): string {
   if (cited.sourceKind === "cds" && cited.cdsEdition) return `in its Common Data Set ${cited.cdsEdition} (${year.replace(/^(Fall|Entered)\b/, (w) => w.toLowerCase())})`;
   if (cited.sourceKind === "cds") return `in its Common Data Set ${year}`;
   if (cited.sourceKind === "class-profile") return `in its class profile for the ${year} class`;
+  if (cited.sourceKind === "notice") return `in an announcement for the ${year} class`;
   return "on its own site";
 }
 

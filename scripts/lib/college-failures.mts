@@ -29,6 +29,9 @@ export const REASON_CODES = [
   "read_no_values",
   "malformed_url",
   "discovery_error",
+  "notice_no_term",
+  "notice_no_figures",
+  "season_none_found",
 ] as const;
 export type ReasonCode = (typeof REASON_CODES)[number];
 export type Stage = "discovery" | "fetch" | "read" | "checks";
@@ -48,6 +51,9 @@ export const STAGE_OF: Record<ReasonCode, Stage> = {
   read_no_values: "read",
   malformed_url: "discovery",
   discovery_error: "discovery",
+  notice_no_term: "read",
+  notice_no_figures: "read",
+  season_none_found: "discovery",
 };
 
 export interface FailureRow {
@@ -83,7 +89,7 @@ export interface ManifestDoc {
   sha256: string;
   unit_id: string;
   url: string;
-  kind: "cds" | "class-profile";
+  kind: "cds" | "class-profile" | "notice";
   type: string;
   edition: string | null;
   retrieved: string;
@@ -252,6 +258,34 @@ function sourceDrafts(recipe: Recipe, state: FailureState, docsBySha: Map<string
 }
 
 /* ------------------------------------------------------------------ */
+/* Notices and seasons (specs/college-reported-fall-figures.md)        */
+/* ------------------------------------------------------------------ */
+
+const NOTICE_FIGURES = ["applicants", "admitted", "enrolled", "acceptance_rate", "enrollment_target", "deposits"] as const;
+
+/**
+ * Fall-figure rows: a notice recorded read without its term in the text (`notice_no_term`, no model call), a notice
+ * read with every figure null (`notice_no_figures`), and a season pass that found no notice (`season_none_found`),
+ * unless the recipe since gained a source for that term.
+ */
+function noticeDrafts(recipe: Recipe): Draft[] {
+  const out: Draft[] = [];
+  const base = { unit_id: recipe.unit_id, checks: [], run: null };
+  for (const s of recipe.sources) {
+    if (s.kind !== "notice" || !s.sha256 || s.extraction === undefined) continue;
+    const last_run = s.processed ?? s.checked ?? recipe.learned;
+    const e = s.extraction as Partial<Record<(typeof NOTICE_FIGURES)[number], number | null>> | null;
+    if (e === null) out.push({ ...base, reason_code: "notice_no_term", detail: `the notice doesn't name ${s.term ?? "its term"}; not read`, url: s.url, edition: s.term ?? null, last_run });
+    else if (NOTICE_FIGURES.every((k) => e[k] === null || e[k] === undefined)) out.push({ ...base, reason_code: "notice_no_figures", detail: `notice read, no first-year figures for ${s.term ?? "its term"}`, url: s.url, edition: s.term ?? null, last_run });
+  }
+  for (const [key, rec] of Object.entries(recipe.seasons ?? {})) {
+    if (!rec || rec.found || recipe.sources.some((s) => s.term === rec.term)) continue;
+    out.push({ ...base, reason_code: "season_none_found", detail: `${key} season: no notice for ${rec.term} found`, url: null, edition: rec.term, last_run: rec.checked });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
 /* Review queue                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -351,7 +385,7 @@ export function classifyFailures(state: FailureState): Omit<FailureRow, "first_s
     const items = (queueBy.get(recipe.unit_id) ?? []).filter((i) => !i.edition || (editionYear(i.edition) ?? 0) >= newestYear);
     const queueUrls = new Set(items.filter((i) => i.failures.some((f) => f.check === "unreachable")).flatMap((i) => i.urls));
 
-    let drafts: Draft[] = queueDrafts(recipe.unit_id, items);
+    let drafts: Draft[] = [...queueDrafts(recipe.unit_id, items), ...noticeDrafts(recipe)];
     if (!college.published) {
       drafts.push(...discoveryDrafts(recipe, { sources: recipe.sources.length > 0 }));
       drafts.push(...sourceDrafts(recipe, state, docsBySha, blocked, queueUrls));
@@ -385,7 +419,9 @@ export function classifyFailures(state: FailureState): Omit<FailureRow, "first_s
         });
       }
     } else {
-      drafts = drafts.filter((d) => d.reason_code === "failed_checks" || d.reason_code === "unreachable" || d.reason_code === "robots_disallowed" || d.reason_code === "never_read");
+      // A published college still lists its fall-figure rows: they are about a newer term than the one it shows.
+      const kept: ReadonlySet<ReasonCode> = new Set(["failed_checks", "unreachable", "robots_disallowed", "never_read", "notice_no_term", "notice_no_figures", "season_none_found"]);
+      drafts = drafts.filter((d) => kept.has(d.reason_code));
     }
     for (const d of mergeDrafts(drafts)) {
       rows.push({

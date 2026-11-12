@@ -18,7 +18,13 @@ import { entryYearOf, htmlToText, newSourcesFromIndex } from "../scripts/lib/col
 import { parseRobots, robotsAllows, sha256 } from "../scripts/lib/college-reported/http.mts";
 import { linesJson } from "../scripts/lib/college-reported/files.mts";
 import { pickPilot } from "../scripts/lib/college-reported/pilot.mts";
-import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
+import { emptySummaryV3, memoryCallLogWriter, type ModelClient } from "../scripts/lib/college-reported/models.mts";
+import { createRound3, type Round3Options, type Round3State } from "../scripts/lib/college-reported/phases.mts";
+import { CDS_TEMPLATE } from "../lib/cds-template.ts";
+import { manifestEntryFor } from "../lib/cds-reads.ts";
+import type { ManifestEntry } from "../lib/cds-sections.ts";
+import { fakeBatchApi } from "./fixtures/fake-batch-api.mts";
+import { memoryArchive } from "./fixtures/memory-archive.mts";
 import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
 const META: DatasetMeta = miniMeta();
@@ -617,4 +623,244 @@ test("the run summary breaks input tokens into cache reads and counts web search
   assert.equal(u.calls, 1);
   assert.equal(u.cache_read_input_tokens, 0);
   assert.equal(u.web_searches, 0);
+});
+
+/* ------------------------------------------------------------------ */
+/* Fall figures: seasons and notices (round 3; specs/college-reported-fall-figures.md)                          */
+/* ------------------------------------------------------------------ */
+
+const CENSUS = { key: "census" as const, term: "Fall 2026", cadence: "weekly" as const };
+const OCT_5 = new Date("2026-10-05T12:00:00Z");
+
+/** A college in a season's scope (selectivity tier, or none and an admit rate under 50%), on the federal fall 2024. */
+function seasonSchool(id: string, tier: string | null = "very_selective"): School {
+  return {
+    ...school(id, { acceptance_rate: 0.3 }),
+    ...(tier ? { selectivity: { tier } } : {}),
+    demographics: { undergrad_enrollment: 40000 },
+  } as unknown as School;
+}
+
+function round3State(recipes: Recipe[], manifest: ManifestEntry[] = []): Round3State {
+  return {
+    sources: { updated: "", recipes },
+    reported: { updated: null, entries: [] },
+    queue: { updated: "", items: [] },
+    manifest: { updated: null, documents: manifest },
+    records: new Map(),
+    batches: { updated: null, batches: [] },
+    blocked: { hosts: [] },
+    manual: [],
+    summary: emptySummaryV3("s1", OCT_5.toISOString()),
+    dirty: new Set(),
+  };
+}
+
+const bigUsage = { input_tokens: 10_000, output_tokens: 3000, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, server_tool_use: null, service_tier: null };
+
+/**
+ * The interactive client of a season run: a notice search (streamed, `save_notice_candidates`) answers with
+ * `candidates(college)`; an extraction (`create`) answers with `extraction(body)`. Records both.
+ */
+function seasonClient(o: { candidates?: (user: string) => { kind: "notice" | "news-index"; url: string }[]; extraction?: (body: Body) => Partial<Extraction> }) {
+  const searches: Body[] = [];
+  const reads: Body[] = [];
+  const client: ModelClient = {
+    messages: {
+      async create(body) {
+        reads.push(body);
+        if (!o.extraction) throw new Error("unexpected extraction");
+        return message(body.model, [{ type: "text", text: JSON.stringify(o.extraction(body)), citations: null }]);
+      },
+      stream(body) {
+        searches.push(body as Body);
+        const user = String((body as Body).messages[0].content);
+        const candidates = o.candidates?.(user) ?? [];
+        const msg = { ...message(body.model, [{ type: "tool_use", id: "t1", name: "save_notice_candidates", input: { candidates, none_found: !candidates.length } }], "tool_use"), usage: bigUsage } as unknown as Anthropic.Message;
+        return { finalMessage: async () => msg };
+      },
+    },
+  };
+  return { client, searches, reads };
+}
+
+function season3(client: ModelClient, fetch: typeof globalThis.fetch, archive = memoryArchive()) {
+  return createRound3({ client, batches: fakeBatchApi(), fetch, now: () => OCT_5, sleep: async () => {}, minDelayMs: 0, archive, table: CDS_TEMPLATE, callLog: memoryCallLogWriter(), log: () => {}, gridLayout: () => null, pollIntervalMs: 1 });
+}
+
+const runSeason = (schools: School[], over: Partial<Round3Options> = {}): Round3Options => ({ run: "s1", phase: "all", schools, maxCost: 25, pollUntil: null, season: CENSUS, ...over });
+
+const UT = "228778";
+const UT_NEWS = `https://news.c${UT}.edu/topics/admissions/`;
+const UT_2025 = `https://news.c${UT}.edu/2025/09/17/ut-enrolls-record-class-of-2029/`;
+const UT_MARCH = `https://news.c${UT}.edu/2026/03/27/record-applications-for-fall-2026/`;
+const UT_SEPT = `https://news.c${UT}.edu/2026/09/18/ut-welcomes-class-of-2030/`;
+const OLD_HTML = "<h1>UT enrolls record Class of 2029</h1><p>9,200 first-year students enrolled this fall.</p>";
+const UT_LISTING = `<ul>
+  <li><a href="/2026/09/18/ut-welcomes-class-of-2030/">UT welcomes the Class of 2030</a></li>
+  <li><a href="/2026/03/27/record-applications-for-fall-2026/">Record applications for fall 2026</a></li>
+  <li><a href="/2025/09/17/ut-enrolls-record-class-of-2029/">UT enrolls record Class of 2029</a></li>
+</ul>`;
+const MARCH_HTML = "<h1>Record applications for fall 2026</h1><p>More than 82,000 students applied for the Fall 2026 first-year class.</p>";
+const SEPT_HTML = "<h1>UT welcomes the Class of 2030</h1><p>This fall 9,487 first-year students enrolled, the Class of 2030.</p>";
+
+/** The fixture college's stored recipe: last year's dated release as a class profile (read), and its news listing. */
+function utRecipe(): { recipe: Recipe; manifest: ManifestEntry[] } {
+  const sha = sha256(new TextEncoder().encode(OLD_HTML));
+  const old: Extraction = { cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2025", applicants: null, admitted: null, enrolled: 9200, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, quotes: { enrolled: "9,200 first-year students enrolled" }, page: null };
+  const recipe: Recipe = { ...recipe3(UT, [{ kind: "class-profile", url: UT_2025, format: "html", sha256: sha, processed: "2025-09-20", checked: "2026-08-01", extraction: old }]), news_index_urls: [UT_NEWS] };
+  const manifest = [manifestEntryFor({ sha256: sha, unit_id: UT, url: UT_2025, final_url: null, kind: "class-profile", type: "class-profile", edition: null, retrieved: "2025-09-20", bytes: OLD_HTML.length, archive: `mem:${sha}.html` })];
+  return { recipe, manifest };
+}
+const recipe3 = (id: string, sources: Recipe["sources"], index_urls: string[] = []): Recipe => ({ unit_id: id, sources, index_urls, learned: "2026-09-01", model: "claude-sonnet-5" });
+
+/** The fake extraction for each notice, by the URL in the user message. */
+function utExtraction(body: Body): Partial<Extraction> {
+  const text = textOf(body);
+  const base = { cohort: "first-year" as const, scope: "all-rounds" as const, entering_term: "Fall 2026", applicants: null, admitted: null, enrolled: null, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, page: null };
+  if (text.includes(UT_MARCH)) return { ...base, applicants: 82000, qualifiers: { applicants: "approx" }, quotes: { applicants: "More than 82,000 students applied" } };
+  if (text.includes(UT_SEPT)) return { ...base, enrolled: 9487, quotes: { enrolled: "9,487 first-year students enrolled" } };
+  throw new Error(`unexpected read: ${text.slice(0, 200)}`);
+}
+
+test("a census-season run: the dated class profile becomes a notice, the news index yields this fall's notices, each figure cites its own", async () => {
+  const { recipe, manifest } = utRecipe();
+  const state = round3State([recipe], manifest);
+  const { client, searches, reads } = seasonClient({ extraction: utExtraction });
+  const { fn, calls } = fakeFetch({ [UT_NEWS]: UT_LISTING, [UT_MARCH]: MARCH_HTML, [UT_SEPT]: SEPT_HTML });
+  const out = await season3(client, fn).run(state, runSeason([seasonSchool(UT)]));
+  assert.equal(out.exit, 0);
+
+  const sources = state.sources.recipes[0].sources;
+  const old = sources.find((s) => s.url === UT_2025)!;
+  assert.equal(old.kind, "notice", "last year's dated release is reclassified");
+  assert.equal(old.found_by, "reclassified");
+  assert.equal(old.term, "Fall 2025");
+  assert.ok(!calls.some((c) => c.url === UT_2025), "a notice read before is never requested again (checked over a month ago)");
+  const march = sources.find((s) => s.url === UT_MARCH)!;
+  assert.deepEqual([march.kind, march.found_by, march.term, march.published], ["notice", "index", "Fall 2026", "2026-03-27"]);
+  assert.ok(sources.some((s) => s.url === UT_SEPT && s.kind === "notice"));
+
+  assert.equal(searches.length, 0, "the free index scan found the term: no paid search");
+  assert.equal(reads.length, 2, "both notices read");
+  assert.match(textOf(reads[0]) + textOf(reads[1]), /Expected entering term: Fall 2026/);
+  assert.match(String((reads[0].system as Anthropic.TextBlockParam[])[0].text), /qualifiers: for each of applicants/);
+
+  const entry = state.reported.entries[0];
+  assert.equal(entry.admissions.entering_term, "Fall 2026");
+  assert.equal(entry.admissions.applicants, 82000);
+  assert.deepEqual(entry.admissions.approx, { applicants: true });
+  assert.equal(entry.admissions.enrolled, 9487);
+  assert.equal(entry.admissions.acceptance_rate, null, "no rate from an approximate count");
+  assert.equal(entry.admissions.source_kind, "notice");
+  assert.equal(entry.lineage["reported.admissions.applicants"]?.url, UT_MARCH);
+  assert.equal(entry.lineage["reported.admissions.enrolled"]?.url, UT_SEPT);
+  assert.equal(entry.lineage["reported.admissions.acceptance_rate"], undefined);
+
+  assert.deepEqual(state.summary.season, { key: "census", term: "Fall 2026", budget_usd: 0.1, spent_usd: 0, colleges: 1, searched: 0, found: 1 });
+});
+
+test("a later run in the same season doesn't search a college again; a search that found nothing is recorded", async () => {
+  const ID = "100700";
+  const state = round3State([recipe3(ID, [{ kind: "cds", url: `https://c${ID}.edu/cds-2025-26.pdf`, format: "pdf", sha256: "a".repeat(64), checked: "2026-10-01" }])], [
+    manifestEntryFor({ sha256: "a".repeat(64), unit_id: ID, url: `https://c${ID}.edu/cds-2025-26.pdf`, final_url: null, kind: "cds", type: "pdf-flat", edition: "2025-26", retrieved: "2026-10-01", bytes: 100, archive: "mem:a.pdf" }),
+  ]);
+  const { client, searches } = seasonClient({ candidates: () => [{ kind: "notice", url: `https://c${ID}.edu/gone` }] });
+  const { fn } = fakeFetch({});
+  await season3(client, fn).run(state, runSeason([seasonSchool(ID)]));
+  assert.equal(searches.length, 1, "one notice search");
+  assert.match(String(searches[0].system), /announced figures about its Fall 2026 entering first-year class/);
+  assert.deepEqual(state.sources.recipes[0].seasons, { census: { term: "Fall 2026", checked: "2026-10-05", found: false } });
+  assert.ok(!state.sources.recipes[0].sources.some((s) => s.kind === "notice"), "the 404 the model named isn't kept");
+  assert.equal(state.summary.season?.searched, 1);
+  assert.ok((state.summary.season?.spent_usd ?? 0) > 0);
+  assert.equal(state.summary.usage_rows.find((r) => r.job === "search")?.calls, 1, "counted in the search rows");
+
+  // The next run, same season: nothing to search.
+  state.summary = emptySummaryV3("s2", OCT_5.toISOString());
+  await season3(client, fn).run(state, { ...runSeason([seasonSchool(ID)]), run: "s2" });
+  assert.equal(searches.length, 1, "the season back-off: not searched again for Fall 2026 this season");
+  assert.equal(state.summary.season?.searched, 0);
+});
+
+test("--season none changes nothing: no reclassification, no news index, no notice, no search", async () => {
+  const { recipe, manifest } = utRecipe();
+  const state = round3State([recipe], manifest);
+  const { client, searches, reads } = seasonClient({ extraction: utExtraction });
+  const { fn, calls } = fakeFetch({ [UT_NEWS]: UT_LISTING, [UT_MARCH]: MARCH_HTML, [UT_SEPT]: SEPT_HTML });
+  await season3(client, fn).run(state, runSeason([seasonSchool(UT)], { season: null }));
+  assert.deepEqual(state.sources.recipes[0].sources.map((s) => [s.kind, s.url]), [["class-profile", UT_2025]]);
+  assert.ok(!calls.some((c) => c.url === UT_NEWS), "the news index isn't fetched");
+  assert.equal(searches.length + reads.length, 0);
+  assert.equal(state.summary.season, undefined);
+});
+
+test("a college outside the four tiers gets no season pass: no reclassification, no search", async () => {
+  const { recipe, manifest } = utRecipe();
+  delete recipe.news_index_urls;
+  const state = round3State([recipe], manifest);
+  const { client, searches } = seasonClient({ candidates: () => [] });
+  const { fn } = fakeFetch({});
+  // A budget of its own, so only the scope rule can keep it from a search.
+  await season3(client, fn).run(state, runSeason([seasonSchool(UT, "accessible")], { seasonBudget: 1 }));
+  assert.equal(state.sources.recipes[0].sources[0].kind, "class-profile");
+  assert.equal(searches.length, 0);
+  assert.equal(state.sources.recipes[0].seasons, undefined);
+  assert.equal(state.summary.season?.colleges, 0);
+});
+
+test("the season budget stops the paid step: the rest wait for the next run", async () => {
+  const ids = ["100801", "100802", "100803"];
+  const state = round3State(ids.map((id) => recipe3(id, [{ kind: "class-profile", url: `https://c${id}.edu/admissions/profile`, format: "html", sha256: "b".repeat(64), checked: "2026-10-01", processed: "2026-10-01", extraction: null }])), ids.map((id) =>
+    manifestEntryFor({ sha256: "b".repeat(64), unit_id: id, url: `https://c${id}.edu/admissions/profile`, final_url: null, kind: "class-profile", type: "class-profile", edition: null, retrieved: "2026-10-01", bytes: 100, archive: "mem:b.html" })
+  ));
+  const { client, searches } = seasonClient({ candidates: () => [] });
+  const { fn } = fakeFetch({});
+  // Each fake search costs $0.05 (10,000 in + 3,000 out on Sonnet 5): $0.13 buys two before less than a search is left.
+  await season3(client, fn).run(state, runSeason(ids.map((id) => seasonSchool(id)), { seasonBudget: 0.13 }));
+  assert.equal(searches.length, 2);
+  assert.equal(state.summary.season?.searched, 2);
+  assert.ok(state.summary.season!.spent_usd <= 0.13);
+  assert.equal(state.sources.recipes.filter((r) => r.seasons?.census).length, 2, "the third college has no season record: it is searched next run");
+});
+
+test("a season search's candidates: a student paper is dropped, a news listing is scanned and remembered", async () => {
+  const ID = "100900";
+  const listing = `https://news.c${ID}.edu/topic/admission/`;
+  const notice = `https://news.c${ID}.edu/2026/09/20/welcome-class-of-2030/`;
+  const state = round3State([recipe3(ID, [{ kind: "class-profile", url: `https://c${ID}.edu/admissions/profile`, format: "html", sha256: "c".repeat(64), checked: "2026-10-01", processed: "2026-10-01", extraction: null }])], [
+    manifestEntryFor({ sha256: "c".repeat(64), unit_id: ID, url: `https://c${ID}.edu/admissions/profile`, final_url: null, kind: "class-profile", type: "class-profile", edition: null, retrieved: "2026-10-01", bytes: 100, archive: "mem:c.html" }),
+  ]);
+  const { client, searches } = seasonClient({
+    candidates: () => [
+      { kind: "notice", url: "https://www.cavalierdaily.com/article/2026/09/class-of-2030" },
+      { kind: "news-index", url: listing },
+    ],
+    extraction: () => ({ cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2026", applicants: null, admitted: null, enrolled: 3988, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, quotes: { enrolled: "3,988 first-year students" }, page: null }),
+  });
+  const { fn, calls } = fakeFetch({ [listing]: `<a href="/2026/09/20/welcome-class-of-2030/">Welcome, Class of 2030</a>`, [notice]: "<p>The Class of 2030: 3,988 first-year students enrolled.</p>" });
+  await season3(client, fn).run(state, runSeason([seasonSchool(ID)]));
+  assert.equal(searches.length, 1);
+  assert.ok(!calls.some((c) => c.url.includes("cavalierdaily")), "a student newspaper is never fetched");
+  const r = state.sources.recipes[0];
+  assert.deepEqual(r.news_index_urls, [listing], "the listing is kept for later seasons (Decision 7)");
+  assert.deepEqual(r.seasons?.census, { term: "Fall 2026", checked: "2026-10-05", found: true });
+  assert.equal(r.sources.find((s) => s.url === notice)?.found_by, "index");
+  assert.equal(state.reported.entries[0].admissions.enrolled, 3988);
+  assert.equal(state.summary.season?.found, 1);
+});
+
+test("a notice on the owner's list joins a known recipe at once (found_by manual), without re-running discovery", async () => {
+  const { recipe, manifest } = utRecipe();
+  delete recipe.news_index_urls;
+  const state = round3State([recipe], manifest);
+  const sheet = "https://www.universityofcalifornia.edu/fall-2026-admissions.pdf";
+  state.manual = [{ unit_id: UT, url: sheet, kind: "notice", note: "UC system fact sheet, Fall 2026", added: "2026-11-11" }];
+  const { client } = seasonClient({ candidates: () => [] });
+  const { fn, calls } = fakeFetch({});
+  await season3(client, fn).run(state, runSeason([seasonSchool(UT)], { season: null }));
+  const src = state.sources.recipes[0].sources.find((s) => s.url === sheet)!;
+  assert.deepEqual([src.kind, src.found_by, src.term, src.form], ["notice", "manual", "Fall 2026", "system-sheet"]);
+  assert.ok(calls.some((c) => c.url === sheet), "fetched like a class profile");
+  assert.ok(!calls.some((c) => c.url.endsWith("/sitemap.xml") || c.url === `https://c${UT}.edu/`), "no discovery probe ran");
 });

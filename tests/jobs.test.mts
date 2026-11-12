@@ -131,9 +131,13 @@ test("the gated schedules: the next college-reported run is the next firing in s
   assert.equal(nextJobRun(cr, at("2026-11-01T12:00:00Z"))?.toISOString(), "2026-11-02T13:00:00.000Z");
   const monthly = cr.schedules.find((s) => s.cron === "0 13 1 * *")!;
   assert.equal(nextScheduleRun(monthly, at("2026-11-01T12:00:00Z"))?.toISOString(), "2026-12-01T13:00:00.000Z");
-  // In December the Monday cron is out of season until August.
+  // In December the Monday cron is out of season until the admits season (March).
   const monday = cr.schedules.find((s) => s.cron === "0 13 * * 1")!;
-  assert.equal(nextScheduleRun(monday, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-08-02T13:00:00.000Z");
+  assert.equal(nextScheduleRun(monday, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-03-01T13:00:00.000Z");
+  // The systems season: the 1st and the 15th of June and July; the monthly cron skips March to May.
+  const systems = cr.schedules.find((s) => s.cron === "0 13 15 6,7 *")!;
+  assert.equal(nextScheduleRun(systems, at("2026-11-11T12:00:00Z"))?.toISOString(), "2027-06-15T13:00:00.000Z");
+  assert.equal(nextScheduleRun(monthly, at("2027-02-10T12:00:00Z"))?.toISOString(), "2027-06-01T13:00:00.000Z");
   assert.equal(nextJobRun(cr, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-01-01T13:00:00.000Z");
   // A hand-run job has no next run.
   assert.equal(nextJobRun(jobById("common-app")!, at("2026-11-01T12:00:00Z")), null);

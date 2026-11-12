@@ -738,6 +738,12 @@ export interface RunSummaryV3 extends RunSummary {
   blocked_colleges?: { unit_id: string; name: string; hosts: string[] }[];
   /** Batches still open when the summary was written (the hold signal; reported.batches holds them). */
   open_batches?: number;
+  /**
+   * The discovery season this run looked in (specs/college-reported-fall-figures.md Decisions 4–6), when one applied:
+   * its term, the season budget and what the notice searches spent of it, the colleges in scope, how many got a paid
+   * search, and how many gained a notice for the term (by a news-index scan or a search).
+   */
+  season?: { key: SeasonKey; term: string; budget_usd: number; spent_usd: number; colleges: number; searched?: number; found: number };
 }
 
 /** "Fall 2026" → 2026; null for anything else. */

@@ -28,6 +28,8 @@ import {
 import { loadCollegeFailures, planFailureLoad } from "../scripts/lib/publish-college-failures.mts";
 
 const MIGRATION = join(import.meta.dirname, "..", "supabase", "migrations", "20261010140000_college_data_failures.sql");
+/** Replaces the reason_code check with the full list once fall figures added three codes. */
+const MIGRATION_FALL = join(import.meta.dirname, "..", "supabase", "migrations", "20261111120000_failure_reasons_fall_figures.sql");
 const D = "2026-10-05";
 
 /* ------------------------------------------------------------------ */
@@ -46,6 +48,11 @@ function recipe(unit_id: string, r: Partial<Recipe> = {}): Recipe {
 
 function cds(url: string, sha256?: string) {
   return { kind: "cds" as const, url, format: "pdf" as const, checked: D, ...(sha256 ? { sha256 } : {}) };
+}
+
+/** A notice source read on D (fall figures). */
+function notice(url: string, o: { extraction: Recipe["sources"][number]["extraction"] }) {
+  return { kind: "notice" as const, url, format: "html" as const, term: "Fall 2026", found_by: "index" as const, checked: D, processed: D, sha256: `sha-${url.length}`, extraction: o.extraction };
 }
 
 function doc(unit_id: string, sha256: string, url: string, edition: string | null, type = "pdf-flat"): ManifestDoc {
@@ -76,6 +83,14 @@ function state(): FailureState {
     recipe("100015", { sources: [cds("https://c100015.edu/cds-2025-26.pdf", "sha15")] }), // published, with held values
     recipe("100016", { sources: [cds("https://c100016.edu/cds-2025-26.pdf", "sha16")] }), // published, nothing held: not listed
     recipe("100017", { discovery: undefined }), // never attempted: not listed
+    // Fall figures (specs/college-reported-fall-figures.md): a notice without its term, a notice with no figures, a
+    // season pass that found nothing. 100021 is published: its fall-figure rows are still listed.
+    recipe("100018", { sources: [notice("https://c100018.edu/news/2026/09/welcome", { extraction: null })] }), // notice_no_term
+    recipe("100019", { sources: [notice("https://c100019.edu/news/2026/09/class", { extraction: { cohort: "unknown", scope: "unknown", entering_term: "Fall 2026", applicants: null, admitted: null, enrolled: null, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, quotes: {} } })] }), // notice_no_figures
+    recipe("100020", { sources: [cds("https://c100020.edu/cds-2025-26.pdf", "sha20")], seasons: { census: { term: "Fall 2026", checked: D, found: false } } }), // season_none_found
+    recipe("100021", { sources: [cds("https://c100021.edu/cds-2025-26.pdf", "sha21")], seasons: { census: { term: "Fall 2026", checked: D, found: false } } }), // published: season_none_found
+    // A season that found nothing earlier, but the recipe gained a notice for the term since: not listed.
+    recipe("100022", { sources: [notice("https://c100022.edu/news/2026/09/class", { extraction: { cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2026", applicants: 1000, admitted: null, enrolled: null, acceptance_rate: null, qualifiers: {}, enrollment_target: null, deposits: null, quotes: { applicants: "1,000" } } })], seasons: { admits: { term: "Fall 2026", checked: D, found: false } } }),
   ];
   const docs: ManifestDoc[] = [
     doc("100007", "sha7", "https://c100007.edu/cds-2022-23.pdf", "2022-23"),
@@ -86,6 +101,8 @@ function state(): FailureState {
     doc("100012", "sha12", "https://c100012.edu/cds-2025-26a.pdf", "2025-26"),
     doc("100015", "sha15", "https://c100015.edu/cds-2025-26.pdf", "2025-26"),
     doc("100016", "sha16", "https://c100016.edu/cds-2025-26.pdf", "2025-26"),
+    doc("100020", "sha20", "https://c100020.edu/cds-2025-26.pdf", "2025-26"),
+    doc("100021", "sha21", "https://c100021.edu/cds-2025-26.pdf", "2025-26"),
   ];
   const queue: ReviewItem[] = [
     item("100006", "unreachable", "HTTP 404 at https://c100006.edu/cds-2025-26.pdf", { urls: ["https://c100006.edu/cds-2025-26.pdf"], entering_term: null }),
@@ -97,9 +114,9 @@ function state(): FailureState {
     item("100015", "number-on-line", "3555 isn't on line 97", { code: "B.122", edition: "2025-26", sha256: "sha15" }),
   ];
   const colleges = new Map<string, CollegeInfo>();
-  for (const r of recipes) colleges.set(r.unit_id, { name: `College ${r.unit_id}`, published: r.unit_id === "100015" || r.unit_id === "100016", federal_year: 2024 });
+  for (const r of recipes) colleges.set(r.unit_id, { name: `College ${r.unit_id}`, published: ["100015", "100016", "100021", "100022"].includes(r.unit_id), federal_year: 2024 });
   const blockedHosts: BlockedHost[] = [];
-  return { recipes, queue, docs, readShas: new Set(["sha11", "sha12", "sha15", "sha16"]), blockedHosts, colleges };
+  return { recipes, queue, docs, readShas: new Set(["sha11", "sha12", "sha15", "sha16", "sha20", "sha21"]), blockedHosts, colleges };
 }
 
 const reasons = (rows: readonly Pick<FailureRow, "unit_id" | "reason_code">[], unit_id: string) => rows.filter((r) => r.unit_id === unit_id).map((r) => r.reason_code);
@@ -126,10 +143,18 @@ test("each reason code comes from the state that should produce it", () => {
     "100013": ["malformed_url"],
     "100014": ["no_document_found", "discovery_error"],
     "100015": ["failed_checks"],
+    "100018": ["notice_no_term"],
+    "100019": ["notice_no_figures"],
+    "100020": ["season_none_found"],
+    "100021": ["season_none_found"],
   };
   for (const [id, codes] of Object.entries(expect)) assert.deepEqual(reasons(rows, id).sort(), [...codes].sort(), `college ${id}`);
   assert.deepEqual(reasons(rows, "100016"), [], "a published college with nothing held isn't listed");
   assert.deepEqual(reasons(rows, "100017"), [], "a college never attempted isn't listed");
+  assert.deepEqual(reasons(rows, "100022"), [], "a season that found nothing is not listed once the recipe holds a notice for its term");
+  const none = rows.find((r) => r.unit_id === "100020")!;
+  assert.equal(none.stage, "discovery");
+  assert.equal(none.edition, "Fall 2026");
   const covered = new Set(rows.map((r) => r.reason_code));
   for (const code of REASON_CODES) assert.ok(covered.has(code), `no case produced ${code}`);
 });
@@ -305,14 +330,18 @@ test("the migration turns RLS on and gives anon and authenticated no policy or g
   assert.match(sql, /primary key \(unit_id, reason_code\)/);
   assert.match(sql, /on public\.college_data_failures \(reason_code\)/);
   assert.match(sql, /resolved_at timestamptz/);
-  for (const code of REASON_CODES) assert.ok(sql.includes(`'${code}'`), `the reason_code check lists ${code}`);
+  const fall = readFileSync(MIGRATION_FALL, "utf8");
+  for (const code of REASON_CODES) assert.ok(fall.includes(`'${code}'`), `the reason_code check (as replaced for fall figures) lists ${code}`);
+  assert.match(fall, /drop constraint if exists college_data_failures_reason_code_check;/);
 });
 
 test("against Postgres: the service role writes and reads; anon and authenticated can do neither", async () => {
   const pg = await PGlite.create();
   await pg.exec(AUTH_STUB_SQL);
   await pg.exec(readFileSync(MIGRATION, "utf8"));
-  const [row] = buildFailuresFile(state(), null, "2026-10-10").rows;
+  await pg.exec(readFileSync(MIGRATION_FALL, "utf8"));
+  const rows = buildFailuresFile(state(), null, "2026-10-10").rows;
+  const [row] = rows;
   await pg.transaction(async (tx) => {
     await tx.exec("set local role service_role");
     await tx.query(
@@ -320,8 +349,16 @@ test("against Postgres: the service role writes and reads; anon and authenticate
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [row.unit_id, row.name, row.reason_code, row.stage, row.detail, row.url, row.edition, row.checks, row.last_run, row.run, row.first_seen, row.last_seen],
     );
+    // Every reason code the classifier writes passes the replaced check (fall figures added three).
+    for (const r of rows.filter((x) => x.reason_code.startsWith("notice_") || x.reason_code === "season_none_found")) {
+      await tx.query(
+        `insert into public.college_data_failures (unit_id, name, reason_code, stage, detail, url, edition, checks, last_run, run, first_seen, last_seen)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [r.unit_id, r.name, r.reason_code, r.stage, r.detail, r.url, r.edition, r.checks, r.last_run, r.run, r.first_seen, r.last_seen],
+      );
+    }
     const back = await tx.query<{ n: number }>("select count(*)::int as n from public.college_data_failures where resolved_at is null");
-    assert.equal(back.rows[0].n, 1);
+    assert.equal(back.rows[0].n, 5);
   });
   for (const user of [null, "00000000-0000-0000-0000-000000000001"]) {
     await assert.rejects(asUser(pg, user, "select * from public.college_data_failures"), /permission denied/);

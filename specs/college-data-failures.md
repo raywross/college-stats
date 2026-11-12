@@ -68,6 +68,9 @@ the pipeline never tried isn't listed.
 | `read_no_values` | read | *Added from the data:* a CDS was read, nothing was held, and still nothing published (a partial CDS) | Eastern Connecticut State's two-page `cds-2025-26a.pdf` (section A only) |
 | `malformed_url` | discovery | A URL that doesn't parse stopped discovery ("URI malformed", "Invalid URL") | San Diego State: "discovery: URI malformed" |
 | `discovery_error` | discovery | Any other discovery error, e.g. an aborted request | Albany State: sitemap "no complete answer in 60 s; aborted" |
+| `notice_no_term` | read | *Fall figures:* a notice (a dated announcement) whose text doesn't name the entering term it was found for; recorded read with no model call | A news listing link that turned out to be about another year |
+| `notice_no_figures` | read | *Fall figures:* a notice read with every figure null | A move-in story that names the class but no counts |
+| `season_none_found` | discovery | *Fall figures:* a season pass (admits, systems, census) searched and found no notice for the term; listed until a source for that term arrives | (none yet) |
 
 The codes are a fixed set: `REASON_CODES` in `scripts/lib/college-failures.mts` and the table's check constraint
 list the same codes (a test keeps them in step). A new code needs both, plus a migration that replaces the check.

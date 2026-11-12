@@ -122,8 +122,8 @@ const ghRun = (id: number, extra: Record<string, unknown> = {}) => ({
   event: "schedule",
   status: "completed",
   conclusion: "success",
-  createdAt: "2026-11-02T13:02:00Z",
-  startedAt: "2026-11-02T13:02:10Z",
+  createdAt: "2026-11-02T13:19:00Z",
+  startedAt: "2026-11-02T13:19:10Z",
   updatedAt: "2026-11-02T14:30:00Z",
   durationMs: 88 * 60_000,
   url: `https://github.com/raywross/college-stats/actions/runs/${id}`,
@@ -147,9 +147,9 @@ function world(over: Partial<World> = {}): World {
     storedRuns: () => ({ ok: true, rows: [storedRow(12), storedRow(11, { status: "failed", error: "Reading publishes failed: timeout", httpStatus: 500 })] }),
     storedRun: (job, id) => (job === "digests" && id === 12 ? storedRow(12) : null),
     githubRuns: () => [
-      ghRun(900), // the Monday 13:00 firing
-      ghRun(901, { createdAt: "2026-11-02T13:31:00Z", startedAt: "2026-11-02T13:31:05Z", durationMs: 20_000 }), // a collect firing
-      ghRun(902, { createdAt: "2026-11-02T14:01:00Z", startedAt: "2026-11-02T14:01:05Z", durationMs: 20_000 }), // a collect firing
+      ghRun(900), // the Monday 13:17 firing
+      ghRun(901, { createdAt: "2026-11-02T13:38:00Z", startedAt: "2026-11-02T13:38:05Z", durationMs: 20_000 }), // a collect firing
+      ghRun(902, { createdAt: "2026-11-02T14:08:00Z", startedAt: "2026-11-02T14:08:05Z", durationMs: 20_000 }), // a collect firing
       ghRun(903, { event: "workflow_dispatch", actor: "raywross", createdAt: "2026-11-01T10:00:00Z" }),
     ],
     githubRunDetail: (job, id) =>
@@ -162,12 +162,12 @@ function world(over: Partial<World> = {}): World {
                 name: "run",
                 status: "completed",
                 conclusion: "success",
-                startedAt: "2026-11-02T13:02:10Z",
+                startedAt: "2026-11-02T13:19:10Z",
                 completedAt: "2026-11-02T14:30:00Z",
                 url: "https://github.com/raywross/college-stats/actions/runs/900/job/1",
                 steps: [
-                  { number: 1, name: "Set up job", status: "completed", conclusion: "success", startedAt: "2026-11-02T13:02:10Z", completedAt: "2026-11-02T13:02:14Z" },
-                  { number: 2, name: "Run the ingestion pipeline", status: "completed", conclusion: "success", startedAt: "2026-11-02T13:02:14Z", completedAt: "2026-11-02T14:29:00Z" },
+                  { number: 1, name: "Set up job", status: "completed", conclusion: "success", startedAt: "2026-11-02T13:19:10Z", completedAt: "2026-11-02T13:19:14Z" },
+                  { number: 2, name: "Run the ingestion pipeline", status: "completed", conclusion: "success", startedAt: "2026-11-02T13:19:14Z", completedAt: "2026-11-02T14:46:00Z" },
                 ],
               },
             ],
@@ -296,9 +296,9 @@ test("a GitHub job's page: the workflow, Run now as the way to start it, every s
   assert.match(html, /href="#run-now"/);
   assert.match(html, /id="run-now"/);
   assert.match(html, /GitHub credentials aren&#x27;t set on this deployment/, "no credentials: Run now says what to set, and offers no form");
-  assert.match(html, /Mondays at 13:00 UTC/);
-  assert.match(html, /The 1st of every month at 13:00 UTC/);
-  assert.match(html, /Every 30 minutes/);
+  assert.match(html, /Mondays at 13:17 UTC/);
+  assert.match(html, /The 1st of every month at 13:17 UTC/);
+  assert.match(html, /Every 30 minutes, at :07 and :37/);
   assert.match(html, /Housekeeping: not counted/);
   assert.match(html, /August to November/);
   // History: the Monday run and the hand-started run show; the two collect firings are hidden and counted.
@@ -307,12 +307,12 @@ test("a GitHub job's page: the workflow, Run now as the way to start it, every s
   assert.doesNotMatch(html, /runs\/901"/);
   assert.doesNotMatch(html, /runs\/902"/);
   assert.match(html, /2 housekeeping firings hidden among the newest 4/);
-  assert.match(html, /Schedule: Mondays at 13:00 UTC/);
+  assert.match(html, /Schedule: Mondays at 13:17 UTC/);
   assert.match(html, /GitHub, raywross/);
 
   const all = await render(jobPage({ params: Promise.resolve({ job: "college-reported" }), searchParams: Promise.resolve({ all: "1" }) }));
   assert.match(all, /runs\/901"/);
-  assert.match(all, /Schedule: Every 30 minutes/);
+  assert.match(all, /Schedule: Every 30 minutes, at :07 and :37/);
   assert.match(all, /Hide them/);
 });
 
@@ -366,7 +366,7 @@ test("a GitHub run's page: the schedule that fired it, each job's steps with out
   const html = await render(runPage({ params: Promise.resolve({ job: "college-reported", run: "900" }) }));
   assert.deepEqual(w.calls, ["requireAdmin", "githubRunDetail"]);
   assert.match(html, /College-reported data: run #900/);
-  assert.match(html, /Schedule: Mondays at 13:00 UTC/);
+  assert.match(html, /Schedule: Mondays at 13:17 UTC/);
   assert.match(html, /Run the ingestion pipeline/);
   assert.match(html, /1 h 27 min/);
   assert.match(html, /href="\/admin\/data\/changes\/44"/);

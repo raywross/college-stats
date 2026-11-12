@@ -163,11 +163,14 @@ export function describeCron(expression: string): string {
   const hours = [...s.hours].sort((a, b) => a - b);
   const everyDay = s.anyDayOfMonth && s.anyDayOfWeek;
 
-  // Every N minutes, all day, every day.
+  // Every N minutes, all day, every day; off the top of the hour ("7,37 * * * *") says which minutes.
   if (everyDay && hours.length === 24 && minutes.length > 1) {
     const step = minutes[1] - minutes[0];
-    if (minutes.every((m, i) => m === minutes[0] + i * step) && minutes[0] === 0 && 60 % step === 0) return step === 1 ? "Every minute" : `Every ${step} minutes`;
-    return expression;
+    if (!minutes.every((m, i) => m === minutes[0] + i * step) || minutes[0] >= step || 60 % step !== 0) return expression;
+    if (step === 1) return "Every minute";
+    if (minutes[0] === 0) return `Every ${step} minutes`;
+    const at = minutes.map((m) => `:${String(m).padStart(2, "0")}`);
+    return `Every ${step} minutes, at ${at.length === 2 ? at.join(" and ") : `${at.slice(0, -1).join(", ")} and ${at.at(-1)}`}`;
   }
   if (minutes.length !== 1 || hours.length !== 1) return expression;
   const time = clock(hours[0], minutes[0]);

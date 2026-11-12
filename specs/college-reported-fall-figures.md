@@ -3,8 +3,9 @@
 > Written 2026-11-11 after the owner saw an Instagram post with UT Austin's Fall 2026 numbers (98,841 applicants,
 > up 9%; 9,487 freshmen) while the site showed Fall 2025. Part of [college-reported-data.md](college-reported-data.md);
 > changes the rules in [college-reported-round-3.md](college-reported-round-3.md) Decisions 6, 7 and 10. Owner
-> decisions taken 2026-11-11 (end of this page); build started the same day on `feature/fall-figures`.
-> Status: **planned**
+> decisions taken 2026-11-11 (end of this page); built the same day on `feature/fall-figures` (PR #248; see "As
+> built" at the end).
+> Status: **built** 2026-11-11
 
 ## The question
 A college's Common Data Set arrives six to twelve months after the class enrolls. Before that, many colleges publish
@@ -230,6 +231,57 @@ federal year arrives.
 3. **Seasons**: the calendar in the pipeline's schedule, the per-season back-off, the news-index scan.
 4. **System sheets**: UC; the other systems checked once.
 5. **Accuracy**: the notice-vs-CDS comparison when the 2026–27 editions land (spring 2027).
+
+## As built (2026-11-11, PR #248)
+Built in three units on `feature/fall-figures` after the owner's decisions: core (opus), pipeline (opus), display
+(sonnet), then a browser QA pass (sonnet). Brief and unit prompts: `~/Projects/college-stats/fall-figures-build/`.
+
+**Core** (`lib/`): `ReportedSourceKind` gains `notice`; `ReportedAdmissions` gains `approx` (per figure),
+`enrollment_target`, `deposits`; `RecipeSource` gains `term`, `published`, `form`, `found_by`; `Recipe` gains
+`news_index_urls` and `seasons`; `Extraction` gains `qualifiers`, `enrollment_target`, `deposits` (old stored
+extractions normalize through `normalizeExtraction`). `lib/reported-combine.ts#combineByTerm` is Decision 2: a CDS
+wins its term outright; else each figure from the newest passing source that states it, exact over approx, each
+with its own lineage record; the rate is stated (with its qualifier) or computed only from two exact counts; a
+cross-source funnel-order check drops the later figure; deposits drop once an enrolled count exists. `lib/newest.ts`
+copies only exact figures into `school.admissions`, so the selectivity tier (which reads `school.admissions`) never
+sees an approximate count (owner decision 2). `lib/seasons.ts`: `seasonOn`, `inSeasonScope` (the four site tiers,
+with the admit-rate tiers as the fallback), `noticePatterns`, `reclassifyDated`, `SEASON_WINDOWS`. Checks: check 1
+fails `multi-campus` and `all-undergraduates` cohorts; check 2 covers approx figures, targets and deposits; check 4
+is skipped when a rate or count is approximate; check 7 compares exact figures only. New field paths
+`reported.admissions.approx`, `.enrollment_target`, `.deposits`; glossary terms `approximate-figure`,
+`enrollment-target`, `deposits`.
+
+**Pipeline** (`scripts/lib/college-reported/`): flags `--season auto|none|admits|systems|census` and
+`--season-budget` (default $0.10 × colleges in scope, within `--max-cost`); the run summary gains `season`.
+In a season, for colleges in scope: dated class-profile URLs are reclassified once; `news_index_urls` are fetched
+every run and scanned by `notices.mts#noticeLinksFromPage` (a link needs a term token, or the bare year beside a
+notice phrase; at most three per page; student-paper hosts excluded); a college with nothing for the season's term
+gets one `searchNotice` call (Sonnet, two searches, no fetch, the prompt in the brief) whose candidates are followed
+as the ladder's are, the news listing kept on `news_index_urls`; then `seasons[key]` records the pass (back-off).
+Notices are read by the class-profile extractor windowed on the term token; no token → `notice_no_term`, no model
+call. `publishC1` now calls `combineByTerm`. New failure codes `notice_no_term`, `notice_no_figures`,
+`season_none_found` (migration `20261111120000_failure_reasons_fall_figures.sql` widens the table's check; apply to
+dev, then prod). Manual `cds-urls` entries of kind `notice` join a recipe without a paid ladder; a note containing
+"system" marks a system sheet, read for the named campus's row only. Workflow: the weekly cron proceeds in March–May
+and August–November, the monthly one in December–February and June–July, plus the 15th of June and July;
+`workflow_dispatch` gains `season`. Setup §13 of college-reported-setup.md has the flags.
+
+**Display**: `components/school/AnnouncedFigures.tsx` under the funnel: "Announced so far, {term}" with one row
+per approximate figure ("about 95,000 applied"), the class goal and deposits, each cited to its reported path; the
+funnel, the waffle and the eyebrow year keep the exact figures. The info popover says "in an announcement" for
+source kind `notice`.
+
+**QA** (fixture college given a Fall 2026 block locally): block on the right college only, rows and popover as
+specified, no overflow at 390 px, profile page unchanged, no console errors. The one miss is pre-existing and
+site-wide: the info-tip trigger is 16 px, under the 44 px tap rule (`components/ui/info-tip-client.tsx`).
+
+**Not built, by choice or scope:** the catch-up run (Decision 5 of the owner's answers) could not run from the build
+session, which has no Anthropic key: the owner dispatches `college-reported.yml` with `season: census` after the
+merge, or runs `npm run sync-college-reported -- --all --season census --max-cost 60` with the key in `.env.local`.
+The UC system sheet is not on the manual list yet (add nine `cds-urls` entries of kind `notice`, note "system").
+`lib/lineage.ts` gives every college-site value the block's single `source_kind`, so a mixed funnel's popover can
+name the wrong kind of document for one figure. `pickReportedDocs` in the admin Files view still lists class
+profiles only. The admin dispatch form doesn't pass `season` (the workflow defaults to `auto`).
 
 ## Owner decisions (2026-11-11)
 1. **Scope: the top four tiers** (521 colleges, ~$150 a year).

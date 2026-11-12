@@ -77,14 +77,9 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
   },
-  // "college-reported" came back 2026-11-11 with the fall-figures spec, from the owner's question about an Instagram
-  // post with UT Austin's newest numbers while the site showed the year before.
-  {
-    key: "college-reported",
-    title: "College-reported figures",
-    description:
-      "The numbers a college posts about its newest class months before its Common Data Set: admit releases in spring, system fact sheets in summer, census releases in fall, each cited to the college's own page.",
-  },
+  // "college-reported" came back 2026-11-11 with the fall-figures spec (from the owner's question about an Instagram
+  // post with UT Austin's newest numbers while the site showed the year before) and left again the same day when it
+  // was built (#248).
   // "data" (2026-11-05): public sources beyond the federal college files, from the owner's question about niche.com.
   {
     key: "data",
@@ -309,18 +304,8 @@ export const ROADMAP: RoadmapSpec[] = [
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
   // Additional data (2026-11-05): one page for six sources, from the comparison with niche.com; each becomes its own
   // spec in the page's order when built (specs/data-expansion/README.md, wave 7).
-  // College-reported (2026-11-11): the figures a college posts before its CDS, sized against the dev store.
-  {
-    slug: "college-reported-fall-figures",
-    file: "specs/college-reported-fall-figures.md",
-    group: "college-reported",
-    summary:
-      "A college's newest class before its Common Data Set arrives: the March admit release, the June system sheet, the September census release, each a dated notice combined into one funnel by entering term, with rounded figures shown as rounded and targets and deposits never shown as enrolled.",
-    complexity: 3,
-    complexityNote:
-      "Two new recipe source kinds and a qualifier in the extraction schema, a combine-by-term rule with per-figure lineage, three discovery seasons for the top four tiers on the existing search-only ladder step, and a catch-up run; the display already shows partial funnels.",
-    status: "planned",
-  },
+  // College-reported fall figures (specs/college-reported-fall-figures.md: notices, seasons, the Announced so far
+  // block) was specified and built 2026-11-11 on feature/fall-figures (#248); see its "As built" section.
   {
     slug: "sources-beyond-federal",
     file: "specs/data-expansion/sources-beyond-federal.md",

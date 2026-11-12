@@ -71,6 +71,9 @@ test("describeCron puts the site's schedules into words and leaves anything odd 
   assert.equal(describeCron("0 9 22 * *"), "The 22nd of every month at 09:00 UTC");
   assert.equal(describeCron("*/30 * * * *"), "Every 30 minutes");
   assert.equal(describeCron("*/15 * * * *"), "Every 15 minutes");
+  assert.equal(describeCron("7,37 * * * *"), "Every 30 minutes, at :07 and :37");
+  assert.equal(describeCron("3,18,33,48 * * * *"), "Every 15 minutes, at :03, :18, :33 and :48");
+  assert.equal(describeCron("7,40 * * * *"), "7,40 * * * *"); // not an even step: as written
   assert.equal(describeCron("0 6 * 2 *"), "0 6 * 2 *"); // a month filter: as written
   assert.equal(describeCron("0 13 1 * 1"), "0 13 1 * 1"); // both day fields: as written
   assert.equal(describeCron("nonsense"), "nonsense");
@@ -128,27 +131,35 @@ test("the gated schedules: the next college-reported run is the next firing in s
   const cr = jobById("college-reported")!;
   // November 1, 2026 is a Sunday: the Monday cron fires the 2nd (in season, Aug–Nov); the monthly cron's next in-season
   // firing is December 1.
-  assert.equal(nextJobRun(cr, at("2026-11-01T12:00:00Z"))?.toISOString(), "2026-11-02T13:00:00.000Z");
-  const monthly = cr.schedules.find((s) => s.cron === "0 13 1 * *")!;
-  assert.equal(nextScheduleRun(monthly, at("2026-11-01T12:00:00Z"))?.toISOString(), "2026-12-01T13:00:00.000Z");
+  assert.equal(nextJobRun(cr, at("2026-11-01T12:00:00Z"))?.toISOString(), "2026-11-02T13:17:00.000Z");
+  const monthly = cr.schedules.find((s) => s.cron === "17 13 1 * *")!;
+  assert.equal(nextScheduleRun(monthly, at("2026-11-01T12:00:00Z"))?.toISOString(), "2026-12-01T13:17:00.000Z");
   // In December the Monday cron is out of season until the admits season (March).
-  const monday = cr.schedules.find((s) => s.cron === "0 13 * * 1")!;
-  assert.equal(nextScheduleRun(monday, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-03-01T13:00:00.000Z");
+  const monday = cr.schedules.find((s) => s.cron === "17 13 * * 1")!;
+  assert.equal(nextScheduleRun(monday, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-03-01T13:17:00.000Z");
   // The systems season: the 1st and the 15th of June and July; the monthly cron skips March to May.
-  const systems = cr.schedules.find((s) => s.cron === "0 13 15 6,7 *")!;
-  assert.equal(nextScheduleRun(systems, at("2026-11-11T12:00:00Z"))?.toISOString(), "2027-06-15T13:00:00.000Z");
-  assert.equal(nextScheduleRun(monthly, at("2027-02-10T12:00:00Z"))?.toISOString(), "2027-06-01T13:00:00.000Z");
-  assert.equal(nextJobRun(cr, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-01-01T13:00:00.000Z");
+  const systems = cr.schedules.find((s) => s.cron === "17 13 15 6,7 *")!;
+  assert.equal(nextScheduleRun(systems, at("2026-11-11T12:00:00Z"))?.toISOString(), "2027-06-15T13:17:00.000Z");
+  assert.equal(nextScheduleRun(monthly, at("2027-02-10T12:00:00Z"))?.toISOString(), "2027-06-01T13:17:00.000Z");
+  assert.equal(nextJobRun(cr, at("2026-12-10T12:00:00Z"))?.toISOString(), "2027-01-01T13:17:00.000Z");
+  // No pipeline cron shares a minute with the collect cron, and none sits on the top of the hour, where GitHub delays
+  // and drops scheduled runs most (the 13:00 crons produced no run at all from October 3 to November 11, 2026).
+  const collect = cr.schedules.find((s) => s.cron === "7,37 * * * *")!;
+  for (const s of cr.schedules) {
+    const minute = Number(s.cron.split(" ")[0].split(",")[0]);
+    assert.notEqual(minute % 30, 0, `${s.cron} sits on the top or bottom of the hour`);
+    if (s !== collect) assert.ok(!collect.cron.split(" ")[0].split(",").includes(String(minute)), `${s.cron} shares a minute with the collect cron`);
+  }
   // A hand-run job has no next run.
   assert.equal(nextJobRun(jobById("common-app")!, at("2026-11-01T12:00:00Z")), null);
 });
 
 test("scheduleOfRun names the schedule that fired a run from its start time, with slack for GitHub's lateness", () => {
   const cr = jobById("college-reported")!;
-  assert.equal(scheduleOfRun(cr, at("2026-11-02T13:04:00Z"))?.cron, "0 13 * * 1"); // Monday, four minutes late
-  assert.equal(scheduleOfRun(cr, at("2026-11-02T13:31:00Z"))?.cron, "*/30 * * * *");
-  assert.equal(scheduleOfRun(cr, at("2026-11-02T14:10:00Z"))?.cron, "*/30 * * * *");
-  assert.equal(scheduleOfRun(cr, at("2026-11-02T14:25:00Z")), null); // 25 minutes after any firing
+  assert.equal(scheduleOfRun(cr, at("2026-11-02T13:21:00Z"))?.cron, "17 13 * * 1"); // Monday, four minutes late
+  assert.equal(scheduleOfRun(cr, at("2026-11-02T13:38:00Z"))?.cron, "7,37 * * * *");
+  assert.equal(scheduleOfRun(cr, at("2026-11-02T14:10:00Z"))?.cron, "7,37 * * * *");
+  assert.equal(scheduleOfRun(cr, at("2026-11-02T14:30:00Z")), null); // 23 minutes after any firing
   assert.equal(scheduleOfRun(jobById("weekly")!, at("2026-11-01T23:02:00Z"))?.cron, "0 23 * * 0");
   assert.equal(scheduleOfRun(jobById("common-app")!, at("2026-11-01T23:02:00Z")), null);
 });

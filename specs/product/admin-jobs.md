@@ -27,7 +27,7 @@ Two runners, one table (`lib/jobs/registry.ts` `JOBS`):
 | Interest confirmations | Vercel | every day 13:30 | |
 | Weekly emails and texts | Vercel | Sundays 23:00 | |
 | Day-before texts | Vercel | Monday to Saturday 23:00 | Sunday belongs to the weekly job |
-| College-reported data | GitHub | Mondays 13:00 (Aug–Nov); the 1st 13:00 (Dec–Jul); every 30 min (collect) | the collect firing is housekeeping |
+| College-reported data | GitHub | Mondays 13:17 (Mar–May, Aug–Nov); the 1st 13:17 (Dec–Feb, Jun–Jul); the 15th 13:17 (Jun–Jul); :07 and :37 every hour (collect) | the collect firing is housekeeping |
 | Data Steward | GitHub | Sundays 09:00 (the weekly audit) | also runs after every college-reported run that read or collected something (`workflow_run`, not a schedule of its own); by hand or from the console |
 | Identity refresh | GitHub | every day 06:00 | does the refresh only when the last probe is 28+ days old |
 | Visit events | GitHub | every day 06:23 | |
@@ -49,7 +49,7 @@ row of the Operations table. A schedule changed in one place and not the other f
 steps; weekday 7 is Sunday; when both day fields are restricted a time matches when either does (Vixie cron's rule,
 which GitHub follows). `nextRun(schedule, from)` is the first firing strictly after `from`; `describeCron` puts the
 site's schedules into words ("Every day at 13:00 UTC", "Monday to Saturday at 23:00 UTC", "The 3rd of every month at
-09:00 UTC", "Every 30 minutes") and leaves anything it can't say as written.
+09:00 UTC", "Every 30 minutes", "Every 30 minutes, at :07 and :37") and leaves anything it can't say as written.
 
 A job's **next run** (`nextJobRun`) is the earliest next firing among its headline schedules that proceeds. Two kinds
 of gate are modelled:
@@ -61,7 +61,7 @@ A gate the console can't compute (identity refresh's "is a refresh due" check) i
 
 `scheduleOfRun(job, startedAt)` names which schedule fired a GitHub run from its start time (the schedule whose firing
 fell in the twenty minutes before it; GitHub's schedules run minutes late), so a run's "Started by" can say
-"Schedule: Mondays at 13:00 UTC" rather than just "Schedule".
+"Schedule: Mondays at 13:17 UTC" rather than just "Schedule".
 
 ## Run records
 GitHub keeps every workflow run; Vercel keeps only logs. So the Vercel cron routes now record their own runs:

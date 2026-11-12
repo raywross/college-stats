@@ -293,7 +293,7 @@ an hour, but one may take up to 24, so a run can end before its batches do.
   script exits (it is rewritten after each submit and each collect). If it lists any, the run opens its PR **as a
   draft**, notes how many batches are open, and comments that the collect job will finish it. No new exit code: 0/1/2/3
   mean what they meant.
-- **The `collect` job** runs every 30 minutes (cron `*/30 * * * *`) and by hand (**Run workflow**, `mode`:
+- **The `collect` job** runs twice an hour, at :07 and :37 (cron `7,37 * * * *`; off the top of the hour, where GitHub delays and drops scheduled runs most) and by hand (**Run workflow**, `mode`:
   **collect**). It exits at once unless an open **draft** PR from a `data/college-reported-<run>` branch exists whose
   `data/college-batches.json` lists open batches. Otherwise it checks out that branch and runs
   `npm run sync-college-reported -- --phase collect --run <run>` (collect, settle reservations, resubmit errored or

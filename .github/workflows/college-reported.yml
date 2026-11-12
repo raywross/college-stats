@@ -64,11 +64,15 @@ on:
     # fires on a plain, widely-supported schedule and the "Check schedule window" step below decides from the current
     # UTC month whether this particular firing should actually run (specs/college-reported-fall-figures.md Decision 4;
     # specs/college-reported-data.md#schedule). Which season a run looks in is the script's own `--season auto`.
-    - cron: "0 13 * * 1" # every Monday 13:00 UTC — proceeds only Mar–May and Aug–Nov (admits and census seasons)
-    - cron: "0 13 1 * *" # the 1st of every month, 13:00 UTC — proceeds only Dec–Feb and Jun–Jul
-    - cron: "0 13 15 6,7 *" # the 15th of June and July, 13:00 UTC — with the 1st, the systems season every two weeks
+    # Minutes: none of these sits on the top or bottom of the hour, and none shares a minute with the collect cron.
+    # GitHub delays and drops scheduled runs most at the top of the hour; with every cron at :00 (and the collect cron at
+    # :00 and :30) the weekly run never fired once between October 3 and November 11, 2026, while the collect cron fired
+    # four to six times a day instead of 48. tests/jobs.test.mts keeps the minutes apart.
+    - cron: "17 13 * * 1" # every Monday 13:17 UTC — proceeds only Mar–May and Aug–Nov (admits and census seasons)
+    - cron: "17 13 1 * *" # the 1st of every month, 13:17 UTC — proceeds only Dec–Feb and Jun–Jul
+    - cron: "17 13 15 6,7 *" # the 15th of June and July, 13:17 UTC — with the 1st, the systems season every two weeks
     # The collect job: exits at once unless the store lists an open batch. Only the collect job runs on it.
-    - cron: "*/30 * * * *"
+    - cron: "7,37 * * * *"
 
 # contents: write is what sending repository_dispatch (the publisher) needs; nothing is pushed.
 permissions:
@@ -86,7 +90,7 @@ env:
 # Both jobs share this group, so a collect never runs while a run is writing the same change set.
 jobs:
   run:
-    if: github.event.schedule != '*/30 * * * *' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'collect')
+    if: github.event.schedule != '7,37 * * * *' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'collect')
     runs-on: ubuntu-latest
     # GitHub-hosted jobs stop at 6 hours; the script polls batches until COLLEGE_REPORTED_POLL_UNTIL (300 minutes in).
     # Open batches go to the collect job.
@@ -104,13 +108,13 @@ jobs:
           # The season calendar (specs/college-reported-fall-figures.md Decision 4; lib/seasons.ts SEASON_WINDOWS):
           # admits Mar 15–May 15 and census Aug 15–Nov 15 weekly, systems Jun 1–Jul 31 every two weeks, the CDS
           # editions monthly in between. Kept in step with lib/jobs/registry.ts (tests/jobs.test.mts).
-          if [ "$event" = "0 13 * * 1" ]; then
+          if [ "$event" = "17 13 * * 1" ]; then
             # Weekly-Monday cron: Mar (3) through May (5), and Aug (8) through Nov (11).
             if { [ "$month" -ge 3 ] && [ "$month" -le 5 ]; } || { [ "$month" -ge 8 ] && [ "$month" -le 11 ]; }; then proceed=true; fi
-          elif [ "$event" = "0 13 1 * *" ]; then
+          elif [ "$event" = "17 13 1 * *" ]; then
             # Monthly-1st cron: Dec (12), Jan (1), Feb (2), Jun (6), Jul (7).
             if [ "$month" -eq 12 ] || [ "$month" -le 2 ] || [ "$month" -eq 6 ] || [ "$month" -eq 7 ]; then proceed=true; fi
-          elif [ "$event" = "0 13 15 6,7 *" ]; then
+          elif [ "$event" = "17 13 15 6,7 *" ]; then
             # Systems-season cron (the 15th): only Jun (6) and Jul (7).
             if [ "$month" -eq 6 ] || [ "$month" -eq 7 ]; then proceed=true; fi
           fi
@@ -279,7 +283,7 @@ jobs:
           fi
 
   collect:
-    if: github.event.schedule == '*/30 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'collect')
+    if: github.event.schedule == '7,37 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'collect')
     runs-on: ubuntu-latest
     # Shorter than the cron's 30 minutes, so a collect never queues behind another and (through the shared concurrency
     # group) never displaces a pending scheduled run. Collecting is idempotent: a collect cut off before it writes leaves

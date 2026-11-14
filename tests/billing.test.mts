@@ -25,6 +25,7 @@ import {
   PRODUCTS,
   statusFrom,
   stripeTrialEnd,
+  stripeTrialFor,
   trialDay,
   trialEndFrom,
   trialEndsLine,
@@ -78,13 +79,22 @@ test("one product at the owner's price: $20 a year per student; an unknown varia
   assert.deepEqual(LIST_PRICES, { student: 20 });
   assert.equal(priceLabel("student"), "$20 a year");
   assert.deepEqual(priceFor("student", "nonsense"), { variant: "list", dollars: 20 });
-  assert.equal(trialPriceLine(), "14 days free, no card needed. $20 a year after.");
+  assert.equal(trialPriceLine(), "14 days free with your card on file, then $20 a year. Cancel before the trial ends and pay nothing.");
+});
+
+test("stripeTrialFor: the trial's own end when two days or more ahead, the remaining day or two when closer, nothing when over", () => {
+  assert.deepEqual(stripeTrialFor("2026-11-28T12:00:00Z", TODAY), { trial_end: Math.floor(new Date("2026-11-28T12:00:00Z").getTime() / 1000) });
+  assert.deepEqual(stripeTrialFor("2026-11-16T00:00:00Z", TODAY), { trial_period_days: 2 });
+  assert.deepEqual(stripeTrialFor("2026-11-14T20:00:00Z", TODAY), { trial_period_days: 1 });
+  assert.equal(stripeTrialFor("2026-11-14T11:00:00Z", TODAY), null);
+  assert.equal(stripeTrialFor(null, TODAY), null);
 });
 
 test("the checkout sentence waits for a trial still two days or more ahead, else says the year starts today", () => {
   const end = trialEndFrom(TODAY);
   assert.equal(checkoutSentence(end, null, TODAY), "Free until Nov 28. Cancel any time before then and you won't be charged. After that, $20 a year.");
-  assert.equal(checkoutSentence(new Date("2026-11-15T12:00:00Z"), null, TODAY), "$20 a year, starting today. Cancel any time; the advisor stays whole until the year ends.");
+  assert.equal(checkoutSentence(new Date("2026-11-15T12:00:00Z"), null, TODAY), "Free until Nov 15. Cancel any time before then and you won't be charged. After that, $20 a year.", "the last day or two stay free too");
+  assert.equal(checkoutSentence(new Date("2026-11-14T11:00:00Z"), null, TODAY), "$20 a year, starting today. Cancel any time; the advisor stays whole until the year ends.");
   assert.equal(checkoutSentence(null, null, TODAY), "$20 a year, starting today. Cancel any time; the advisor stays whole until the year ends.");
   assert.equal(trialEndsLine("2026-11-28T12:00:00Z", TODAY), "Trial ends Nov 28");
   assert.equal(trialEndsLine("2027-01-02T12:00:00Z", TODAY), "Trial ends Jan 2, 2027");
@@ -130,7 +140,7 @@ test("statusFrom: a paid year beats a trial; the database's trial counts as a tr
   assert.equal(decidingRow([row({ status: "canceled", updated: "2026-11-15T00:00:00Z" }), row({ id: "live", status: "trialing", updated: "2026-11-01T00:00:00Z" })])!.id, "live");
 });
 
-test("entitlementFrom: whole while the price isn't live or Stripe is unset; whole on a trial, a year, or an early account through 2027-08-31; else read-only", () => {
+test("entitlementFrom: whole while the price isn't live or Stripe is unset; a trial waits for its card (owner: a card whenever a student is created); whole on a paid trial, a year, or an early account through 2027-08-31; else read-only", () => {
   const live = new Date("2026-12-01T00:00:00Z");
   const later = new Date("2027-01-15T00:00:00Z");
   const base = { stripeConfigured: true, accountsCreated: ["2027-01-01T00:00:00Z"], rows: [] as SubscriptionRow[], trial: null as TrialRow | null, today: later };
@@ -138,17 +148,25 @@ test("entitlementFrom: whole while the price isn't live or Stripe is unset; whol
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, stripeConfigured: false }).because, "not-live");
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live }).whole, false);
   const running = entitlementFrom({ ...base, priceLiveAt: live, trial: trial({ ends_at: "2027-01-20T00:00:00Z" }) });
-  assert.equal(running.because, "trial");
-  assert.equal(running.paid, false, "a card is not on file yet");
+  assert.equal(running.status, "trial");
+  assert.equal(running.whole, false, "the advisor waits for the card");
+  assert.equal(running.needsCard, true);
+  assert.equal(running.paid, false);
   const paying = entitlementFrom({ ...base, priceLiveAt: live, trial: trial({ ends_at: "2027-01-20T00:00:00Z" }), rows: [row({ trial_end: "2027-01-20T00:00:00Z" })] });
   assert.equal(paying.because, "subscription");
+  assert.equal(paying.whole, true);
   assert.equal(paying.paid, true);
+  assert.equal(paying.needsCard, false);
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, rows: [row({ status: "active" })] }).whole, true);
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, accountsCreated: ["2026-11-01T00:00:00Z"] }).because, "early");
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, accountsCreated: ["2026-11-01T00:00:00Z"], today: new Date("2027-09-01T00:00:00Z") }).whole, false, "the early period ends");
   const lapsed = entitlementFrom({ ...base, priceLiveAt: live, trial: trial({ ends_at: "2027-01-01T00:00:00Z" }) });
   assert.equal(lapsed.status, "lapsed");
   assert.equal(lapsed.whole, false);
+  assert.equal(lapsed.needsCard, false, "an ended trial is lapsed, not waiting");
+  const earlyTrial = entitlementFrom({ ...base, priceLiveAt: live, accountsCreated: ["2026-11-01T00:00:00Z"], trial: trial({ ends_at: "2027-01-20T00:00:00Z" }) });
+  assert.equal(earlyTrial.whole, true, "an early account's trial needs no card");
+  assert.equal(earlyTrial.needsCard, false);
 });
 
 test("the feature map: every capability the code names is a row; the free rows are the two live beyond the plan; a lapsed plan reads its list, calendar, and offers and writes nothing", () => {
@@ -265,7 +283,8 @@ test("the jobs that are the advisor's filter by entitlement; the webhook verifie
   assert.match(stripe, /mode: "setup"/, "the household card is saved through a setup session");
   assert.match(stripe, /payment_method_collection: "always"/);
   assert.match(stripe, /missing_payment_method: "cancel"/);
-  assert.doesNotMatch(stripe, /trial_period_days/, "the trial is the database's; Stripe gets its end date, never a fresh 14 days");
+  assert.match(stripe, /stripeTrialFor\(input\.trialEnd\)/, "the trial is the database's; Stripe gets its end date (or the last day or two), never a fresh 14 days");
+  assert.doesNotMatch(stripe, /trial_period_days: TRIAL_DAYS/);
   const household = read("app/household/actions.ts");
   assert.match(household, /cardOnFile\(/);
   assert.match(household, /redirect\(`\$\{ADD_CARD_PATH\}\?next=/, "a parent with no card is sent to add one before the student is made");

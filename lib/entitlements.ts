@@ -197,13 +197,15 @@ export interface AdvisorBilling {
   cancelAtPeriodEnd: boolean;
   /** A live subscription pays for the student (a card is on file; the year will be charged). */
   paid: boolean;
+  /** The trial runs but no card is on file: the advisor waits, read-only, for the card (lib/billing.ts Entitlement). */
+  needsCard: boolean;
   /** The viewer holds the subscription (so Manage and Cancel are theirs to press). */
   mine: boolean;
 }
 
 /** The Advisor tab's and the account page's facts about one student's billing, as the viewer may read them. */
 export async function advisorBillingFor(studentId: string, viewerId: string | null): Promise<AdvisorBilling> {
-  const none: AdvisorBilling = { status: "preview", whole: true, because: "not-live", trialEnd: null, trialDaysLeft: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, paid: false, mine: false };
+  const none: AdvisorBilling = { status: "preview", whole: true, because: "not-live", trialEnd: null, trialDaysLeft: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, paid: false, needsCard: false, mine: false };
   if (!billingConfigured()) return none;
   const live = await priceLiveAt();
   if (live === null) return none;
@@ -219,6 +221,7 @@ export async function advisorBillingFor(studentId: string, viewerId: string | nu
     currentPeriodEnd: e.row?.current_period_end ?? null,
     cancelAtPeriodEnd: e.row?.cancel_at_period_end ?? false,
     paid: e.paid,
+    needsCard: e.needsCard,
     mine: e.row !== null && viewerId !== null && e.row.user_id === viewerId,
   };
 }

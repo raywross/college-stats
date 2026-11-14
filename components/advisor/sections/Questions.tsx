@@ -41,11 +41,11 @@ export const QUESTIONS: { q: string; a: ReactNode }[] = [
 export const TRIAL_QUESTIONS: { q: string; a: ReactNode }[] = [
   {
     q: "How does the free trial work?",
-    a: <>Create an account and the whole advisor is yours for {TRIAL_DAYS} days, no card needed. After that it&apos;s {priceLabel("student")} per student, annual only. Do nothing and nothing is charged.</>,
+    a: <>Create an account, put a card on file, and the whole advisor is yours for {TRIAL_DAYS} days. When the trial ends the card is charged {priceLabel("student")}, annual only, and the advisor carries on. Cancel before the trial ends and nothing is charged.</>,
   },
   {
-    q: "When do I pay?",
-    a: <>Add a card any time during the trial and the year starts when the trial ends, without a gap. Payment is handled by Stripe; Quad never sees your card.</>,
+    q: "Why a card up front?",
+    a: <>So the advisor carries on without a gap when the trial ends. Payment is handled by Stripe; Quad never sees your card, only its brand and last four digits.</>,
   },
   {
     q: "How do I cancel?",

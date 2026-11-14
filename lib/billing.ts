@@ -85,7 +85,8 @@ export function trialEndFrom(start: Date): Date {
 
 /**
  * Stripe's `trial_end` for a subscription that should start charging when the student's trial ends: the trial's end
- * as unix seconds when it is far enough ahead (Checkout needs at least 48 hours), else null, meaning charge now.
+ * as unix seconds when it is far enough ahead (Checkout needs at least 48 hours), else null. `stripeTrialFor()` below
+ * is what the checkout uses: it keeps the last two days free too.
  */
 export const STRIPE_TRIAL_MIN_MS = 48 * 3_600_000 + 5 * 60_000;
 
@@ -94,6 +95,24 @@ export function stripeTrialEnd(trialEnd: string | Date | null | undefined, today
   const end = typeof trialEnd === "string" ? new Date(trialEnd) : trialEnd;
   if (Number.isNaN(end.getTime()) || end.getTime() - today.getTime() < STRIPE_TRIAL_MIN_MS) return null;
   return Math.floor(end.getTime() / 1000);
+}
+
+/**
+ * The trial Checkout gives a subscription made during the student's trial (owner, 2026-11-14: the card is collected,
+ * the trial runs, the charge lands when it ends): the trial's own end when it is two days or more ahead; the remaining
+ * whole days (one or two) when it is closer, since Checkout takes `trial_end` only that far out; nothing when the trial
+ * is over, so the year starts today.
+ */
+export type StripeTrial = { trial_end: number } | { trial_period_days: number } | null;
+
+export function stripeTrialFor(trialEnd: string | Date | null | undefined, today: Date = new Date()): StripeTrial {
+  if (!trialEnd) return null;
+  const end = typeof trialEnd === "string" ? new Date(trialEnd) : trialEnd;
+  const left = end.getTime() - today.getTime();
+  if (Number.isNaN(left) || left <= 0) return null;
+  const asEnd = stripeTrialEnd(end, today);
+  if (asEnd !== null) return { trial_end: asEnd };
+  return { trial_period_days: Math.max(1, Math.ceil(left / 86_400_000)) };
 }
 
 /** "Nov 28", or "Nov 28, 2027" when the year isn't today's. */
@@ -109,8 +128,7 @@ export function shortDay(iso: string | Date, today: Date = new Date(), timeZone 
  * ends; after it, the year starts today.
  */
 export function checkoutSentence(trialEnd: string | Date | null, variant?: string | null, today: Date = new Date()): string {
-  const stripeEnd = stripeTrialEnd(trialEnd, today);
-  if (stripeEnd !== null) return `Free until ${shortDay(trialEnd!, today)}. Cancel any time before then and you won't be charged. After that, ${priceLabel("student", variant)}.`;
+  if (stripeTrialFor(trialEnd, today) !== null) return `Free until ${shortDay(trialEnd!, today)}. Cancel any time before then and you won't be charged. After that, ${priceLabel("student", variant)}.`;
   return `${priceLabel("student", variant)}, starting today. Cancel any time; the advisor stays whole until the year ends.`;
 }
 
@@ -227,13 +245,18 @@ export interface Entitlement {
   status: StatusWord;
   /** Every capability in the map, writes included. False: the free rows and the read-only plan. */
   whole: boolean;
-  /** Why it's whole: the price isn't live, the account is early, the trial is running, or a subscription pays. */
-  because: "not-live" | "early" | "trial" | "subscription" | null;
+  /** Why it's whole: the price isn't live, the account is early, or a subscription pays (the trial alone never is). */
+  because: "not-live" | "early" | "subscription" | null;
   /** The subscription behind `status`, when one pays for the student. */
   row: SubscriptionRow | null;
   trial: TrialRow | null;
-  /** A live subscription exists, so a card is on file and the year will be charged: the trial needs nothing more. */
+  /** A live subscription exists: a card is on file and the year will be charged when the trial ends. */
   paid: boolean;
+  /**
+   * The trial is running but no card is on file yet (owner, 2026-11-14: a card is collected whenever a student is
+   * created): the advisor waits, read-only, for the card; nothing is charged until the trial ends.
+   */
+  needsCard: boolean;
 }
 
 export interface EntitlementInput {
@@ -253,11 +276,13 @@ export function entitlementFrom(input: EntitlementInput): Entitlement {
   const status = statusFrom(input.rows, input.trial, today);
   const row = decidingRow(input.rows);
   const paid = input.rows.some(subscriptionLive);
-  const base = { status, row, trial: input.trial, paid };
+  const running = trialRunning(input.trial, today);
+  const base = { status, row, trial: input.trial, paid, needsCard: false };
   if (!input.stripeConfigured || input.priceLiveAt === null) return { ...base, whole: true, because: "not-live" };
   if (paid) return { ...base, whole: true, because: "subscription" };
-  if (trialRunning(input.trial, today)) return { ...base, whole: true, because: "trial" };
   if (earlyFreeRunning(today) && input.accountsCreated.some((c) => isEarly(c, input.priceLiveAt))) return { ...base, whole: true, because: "early" };
+  // A trial with no card yet: the clock runs, the advisor waits for the card (and charges nothing until the trial ends).
+  if (running) return { ...base, whole: false, because: null, needsCard: true };
   return { ...base, whole: false, because: null };
 }
 
@@ -384,13 +409,19 @@ export function lapsedLine(status: StatusWord, firstName: string | null): string
   return `${whose} is read-only: the list, its levels, the calendar, and the offers stay; the guides and changes come with a subscription.`;
 }
 
+/** The banner while a trial waits for its card (owner, 2026-11-14): the date, that nothing is charged until then, how to open it. */
+export function cardNeededLine(trialEnd: string, firstName: string | null, today: Date = new Date()): string {
+  const whose = firstName ? `${firstName}'s advisor` : "your advisor";
+  return `The free trial runs until ${shortDay(trialEnd, today)}. Add a card to open ${whose}: nothing is charged until then, and cancelling before then costs nothing.`;
+}
+
 /** The splash page's and the pricing page's price line once the price is live. */
 export function trialPriceLine(variant?: string | null): string {
-  return `${TRIAL_DAYS} days free, no card needed. ${priceLabel("student", variant)} after.`;
+  return `${TRIAL_DAYS} days free with your card on file, then ${priceLabel("student", variant)}. Cancel before the trial ends and pay nothing.`;
 }
 
 /** The splash page's button once the price is live. */
 export const TRIAL_CTA = `Start your ${TRIAL_DAYS}-day free trial`;
 
 /** The refund rule, stated on the pricing page (commercialization.md "Billing"). */
-export const REFUND_RULE = `The trial is the refund policy: ${TRIAL_DAYS} days free, with nothing to cancel. After a charge, a refund within ${TRIAL_DAYS} days on request if the list has fewer than three colleges and no guide was completed.`;
+export const REFUND_RULE = `The trial is the refund policy: ${TRIAL_DAYS} days free with your card on file, and nothing is charged if you cancel before it ends. After a charge, a refund within ${TRIAL_DAYS} days on request if the list has fewer than three colleges and no guide was completed.`;

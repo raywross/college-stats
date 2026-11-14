@@ -3,7 +3,7 @@ title: The Advisor's trial and billing, built and waiting for the switch
 pr: 251
 date: 2026-11-14
 kind: feature
-summary: Quad Advisor can now be sold the way the owner decided, 14 days free from the day a student joins and then $20 a year per student, with parents and counselors free, but nothing changes on the site until the owner connects Stripe and turns the price on.
+summary: Quad Advisor can now be sold the way the owner decided, 14 days free from the day a student joins with a card on file and then $20 a year per student unless cancelled, with parents and counselors free, but nothing changes on the site until the owner connects Stripe and turns the price on.
 ---
 
 ## What's new
@@ -16,11 +16,12 @@ What's ready behind the Advisor tab, for the day the price goes live:
   Quad stays free: every college's page, Explore, Compare, the data, your record, and Quad's estimate on every college
   page. The new [pricing page](/pricing) lists it, and what the money never buys: no ads, no featured listings, no leads
   sold to colleges, no advisor commissions.
-- **A 14-day free trial that starts by itself**, the moment a student's record is made, with no card needed. A student
-  who signs up, a student a parent adds, a student a counselor invites: all three get the same 14 days of the whole advisor.
-- **Who pays, and how.** A student of any age can keep their own advisor: add a card during the trial and the year
-  starts when the trial ends, without a gap. A parent enters one card for the household, once; each student they add is
-  paid for from it after the student's trial.
+- **A 14-day free trial that starts by itself**, the moment a student's record is made. A student who signs up, a
+  student a parent adds, a student a counselor invites: all three get the same 14 days of the whole advisor.
+- **A card on file, charged when the trial ends unless you cancel.** A student of any age puts their own card on file
+  when they first open the Advisor tab; nothing is charged until the trial ends, and cancelling before then costs
+  nothing. A parent enters one card for the household, once; each student they add is paid for from it after the
+  student's trial.
 - **While the trial runs**, the Advisor tab says quietly when it ends and how to keep it, and an email comes three days
   before the end. No second reminder, and never a text about billing.
 - **Your account page** gets an Advisor row: the card on file, each student's subscription with its date, Cancel or

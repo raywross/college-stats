@@ -13,7 +13,7 @@ import "server-only";
  */
 import Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isProduct, isSubscriptionStatus, LIST_VARIANT, priceFor, stripeTrialEnd, type Product, type SubscriptionRow } from "./billing.ts";
+import { isProduct, isSubscriptionStatus, LIST_VARIANT, priceFor, stripeTrialFor, type Product, type SubscriptionRow } from "./billing.ts";
 
 export type BillingEnv = Record<string, string | undefined>;
 
@@ -102,20 +102,20 @@ export interface SubscriptionCheckoutInput {
 
 /**
  * A hosted Checkout session for one student's subscription: `mode: subscription`, the card collected now, the first
- * charge at the student's trial end (Stripe's `trial_end`) when that is at least two days away, else today. A trial
- * that reaches its end with no card never charges (`missing_payment_method: cancel`). Returns the URL to send the
- * browser to.
+ * charge when the student's trial ends (Stripe's `trial_end`, or the remaining day or two as `trial_period_days` when
+ * the end is closer than Checkout's two-day minimum), today when the trial is over. A trial that reaches its end with
+ * no card never charges (`missing_payment_method: cancel`). Returns the URL to send the browser to.
  */
 export async function createSubscriptionCheckout(input: SubscriptionCheckoutInput): Promise<string> {
   const metadata = subscriptionMetadata({ userId: input.user.id, studentId: input.studentId, priceVariant: input.priceVariant });
-  const trialEnd = stripeTrialEnd(input.trialEnd);
+  const trial = stripeTrialFor(input.trialEnd);
   const session = await stripe().checkout.sessions.create({
     mode: "subscription",
     customer: input.customerId,
     line_items: [{ price: priceIdFor("student", metadata.price_variant), quantity: 1 }],
     payment_method_collection: "always",
     subscription_data: {
-      ...(trialEnd !== null ? { trial_end: trialEnd, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}),
+      ...(trial !== null ? { ...trial, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}),
       metadata,
     },
     metadata,

@@ -67,8 +67,10 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     .filter((s) => !named || s.studentId === forParam)
     .map((s) => ({ studentId: s.studentId, label: s.self ? "You" : (s.name ?? "A student"), paid: s.billing.paid, trialEnd: s.billing.trialEnd }));
 
+  // A trial waiting for its card opens the advisor; anything else keeps or restores it.
+  const waiting = offer.students.some((s) => students.some((o) => o.studentId === s.studentId) && s.billing.needsCard);
   return shell(
-    `Keep ${ADVISOR_NAME}`,
+    waiting ? `Open ${ADVISOR_NAME}` : `Keep ${ADVISOR_NAME}`,
     <>
       {cancelled === "1" && (
         <p role="status" className="rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground">
@@ -76,8 +78,8 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         </p>
       )}
       <p className="text-muted-foreground">
-        {priceLabel("student")} per student, annual only, so the advisor runs on the school year&apos;s rhythm. A trial still running stays free to its last
-        day; the first charge comes when it ends. Everything else on Quad stays free.{" "}
+        {TRIAL_DAYS} days free with a card on file, then {priceLabel("student")} per student, annual only, so the advisor runs on the school year&apos;s rhythm. The
+        charge lands when the trial ends unless you cancel before then; cancelling costs nothing. Everything else on Quad stays free.{" "}
         <Link href="/pricing" className="font-semibold text-primary hover:underline">
           What&apos;s free and what&apos;s paid →
         </Link>

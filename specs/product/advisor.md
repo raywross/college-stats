@@ -206,7 +206,8 @@ until the trial exists). Built 2026-11-14, below.
 Built on `feature/billing` with [commercialization.md](commercialization.md#as-built-2026-11-14), where the billing
 side (the tables, the webhook, the entitlement hook, the pricing page, the admin switch, the owner's setup) is written
 up, and **redrawn the same day on the owner's decisions**: no family price; a student never needs a parent; **the trial
-starts when the account is created**, with no card; parents and counselors free; a parent enters one card for the
+starts when the account is created**, with a card collected whenever a student is created and charged when the trial
+ends unless cancelled before then; parents and counselors free; a parent enters one card for the
 household and pays for each student they add; a counselor may invite a parent. What this spec's part 2 asked for, as
 it stands now:
 
@@ -216,10 +217,16 @@ it stands now:
   (`/admin/settings`, "Advisor price"). Accounts created before that moment keep the advisor free through 2027-08-31.
 - **The trial starts with the record.** A trigger on `students` writes `advisor_trials` (14 days from now) for every new
   record, whichever door made it: a student's own sign-up (which already requires a password), a parent's Add a student,
-  a counselor's invitation. No card, nothing to click. One trial per student, by construction.
+  a counselor's invitation. One trial per student, by construction.
+- **The card comes with the student** (owner, later on 2026-11-14: "always collect a card anytime a student is created
+  … automatically charge 14 days in unless they cancel"). A parent's card is on file before they can add a student. A
+  student who signs up finds the Advisor tab read-only behind one banner, "The free trial runs until Nov 28. Add a card
+  to open your advisor: nothing is charged until then, and cancelling before then costs nothing.", and Stripe Checkout
+  saves the card with `trial_end` at the trial's end, so the charge lands then unless they cancel from `/account`.
 - **The button's path.** Once live, the splash page's buttons read "Start your 14-day free trial" with the line "14 days
-  free, no card needed. $20 a year after." and the sign-up comes back to `/advisor`: the trial is already running. The
-  Questions gain the trial, when you pay, cancelling, who pays, and lapsing (`TRIAL_QUESTIONS`).
+  free with your card on file, then $20 a year. Cancel before the trial ends and pay nothing." and the sign-up comes back
+  to `/advisor`, where the card is asked for. The Questions gain the trial, the card, cancelling, who pays, and lapsing
+  (`TRIAL_QUESTIONS`).
 - **Who pays.** Any student may pay for their own advisor (the 16-and-older rule and the permission checkbox are gone;
   the Terms' sentence about minors stays on the sheet and the pricing page). A guardian pays for a child: with a card on
   file, one tap on `/advisor/start` makes the subscription on the server; without one, Checkout collects the card. The
@@ -229,14 +236,14 @@ it stands now:
   (Checkout in setup mode, nothing charged), then back to Household; the student is then paid for at once: a
   subscription on the parent's customer, trialing until the student's trial ends, then charged. `/account` shows the
   card (brand, last four) with Add or Change, and each student's subscription by name.
-- **A counselor's student.** The record's trial starts when it is made. When the student logs in, the Advisor tab shows
-  the quiet trial line, then a banner in the last three days asking for a card; the reminder email asks too. The
+- **A counselor's student.** The record's trial starts when it is made. When the student logs in, the Advisor tab asks
+  for the card before it opens; the reminder email asks too if none has come by the last three days. The
   counselor's student page gained a **Family** panel: "Invite a parent" puts the student in a household (theirs, or a
   new one named after them) and sends the ordinary guardian invitation; the parent who accepts sees the same advisor
   and can pay ([counselor-portal.md](counselor-portal.md#inviting-a-parent-2026-11-14)).
-- **During the trial**: whole, with the quiet line above the plan (`components/advisor/BillingLine.tsx`, passed to
-  `PlanFrame` as `billing`): "Trial ends Nov 28 · 14 days free, no card needed · Add a card to keep it", or, once a
-  card pays, "Trial ends Nov 28, then the year starts · Manage".
+- **During the trial**: once a card pays, whole, with the quiet line above the plan (`components/advisor/BillingLine.tsx`,
+  passed to `PlanFrame` as `billing`): "Trial ends Nov 28, then the year starts · Manage". Before the card, the banner
+  above and a read-only plan.
 - **Three days before the end**, one email (`lib/emails/trial-ending.ts`): colleges on the list and moves done so far,
   the date and the amount; with a card on file, one button to keep it (nothing to do) and a link to cancel; without
   one, one button to add a card and the plain fact that nothing is charged otherwise. Stripe's `trial_will_end` sends

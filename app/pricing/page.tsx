@@ -22,7 +22,7 @@ async function priceIsLive(): Promise<boolean> {
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Everything on Quad is free except ${ADVISOR_NAME}: ${priceLabel("student")} per student after a ${TRIAL_DAYS}-day free trial with no card needed. Parents and counselors use Quad free.`,
+  description: `Everything on Quad is free except ${ADVISOR_NAME}: ${priceLabel("student")} per student after a ${TRIAL_DAYS}-day free trial. Parents and counselors use Quad free.`,
   alternates: { canonical: "/pricing" },
 };
 
@@ -49,7 +49,7 @@ export default async function PricingPage() {
       <header className="max-w-3xl">
         <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Pricing</h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Everything on Quad is free. {ADVISOR_NAME}, built on your record, is the one thing that costs money: {priceLabel("student")} per student, after {TRIAL_DAYS} days free with no card needed. Parents and counselors pay nothing for their own accounts.
+          Everything on Quad is free. {ADVISOR_NAME}, built on your record, is the one thing that costs money: {priceLabel("student")} per student, after {TRIAL_DAYS} days free with a card on file. Parents and counselors pay nothing for their own accounts.
         </p>
         {!live && <p className="mt-3 rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground">While Quad is in preview, the advisor is free for every account. These are the prices to come; accounts made before they go live keep the advisor free through the end of this application cycle.</p>}
       </header>
@@ -58,7 +58,7 @@ export default async function PricingPage() {
         <h2 id="pricing-cards" className="sr-only">
           The price
         </h2>
-        <PriceCard title={ADVISOR_NAME} price={priceLabel("student")} lines={["One student's advisor through senior year, per student", "Paid by the student, or by a parent with one card for the household", `${TRIAL_DAYS} days free from the day the student is added, no card needed`]} href={startHref} live={live} />
+        <PriceCard title={ADVISOR_NAME} price={priceLabel("student")} lines={["One student's advisor through senior year, per student", "Paid by the student, or by a parent with one card for the household", `${TRIAL_DAYS} days free from the day the student is added, card on file, charged when the trial ends unless cancelled`]} href={startHref} live={live} />
         <div className="flex flex-col justify-center rounded-3xl border bg-muted/30 p-6 text-sm text-muted-foreground">
           <h3 className="font-display text-xl font-bold text-foreground">Parents and counselors: free</h3>
           <p className="mt-2">A parent&apos;s account, the household, and everything a parent sees of a student&apos;s advisor cost nothing. The student&apos;s advisor is what&apos;s paid for, once, whoever pays.</p>
@@ -129,7 +129,7 @@ export default async function PricingPage() {
           Questions
         </h2>
         <dl className="mt-4 space-y-4 text-sm">
-          <QA q="How does the trial work?" a={`${TRIAL_DAYS} days, the whole advisor, from the day a student's record is made, with no card. Add a card during the trial and the year starts when it ends, without a gap; do nothing and nothing is charged. One trial per student.`} />
+          <QA q="How does the trial work?" a={`${TRIAL_DAYS} days, the whole advisor, from the day a student's record is made, with a card on file. When the trial ends the card is charged ${priceLabel("student")} and the advisor carries on; cancel before then and nothing is charged. One trial per student.`} />
           <QA q="Who pays?" a={`Either the student or a parent. A parent keeps one card for the household and pays ${priceLabel("student")} for each student they add. A student can start their own trial and pay for their own advisor.`} />
           <QA q="Refunds" a={REFUND_RULE} />
           <QA q="Minors" a={`A student of any age may start their own trial. ${MINOR_TERMS_SENTENCE}`} />

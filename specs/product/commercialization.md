@@ -2,8 +2,8 @@
 
 > Status: **billing built 2026-11-14** on `feature/billing` (see [As built](#as-built-2026-11-14) and
 > [Setup (owner)](#setup-owner)), and **redrawn the same day on the owner's decisions**: one price, $20 a year per
-> student, no family price; the trial starts the moment a student record exists, with no card, and a student never needs
-> a parent; parents and counselors free; a parent keeps one card for the household and pays for each student they add; a
+> student, no family price; the trial starts the moment a student record exists, the card is collected whenever a student
+> is created and charged when the trial ends unless cancelled before then, and a student never needs a parent; parents and counselors free; a parent keeps one card for the household and pays for each student they add; a
 > counselor may invite a parent. Stripe Checkout, the webhook, the `subscriptions` and `advisor_trials` tables, the
 > entitlement map behind `allowed()`, the pricing page, the account row, the trial's email, the nightly reconcile, and the
 > `advisor.price_live_at` switch. Nothing is gated or sold until the owner connects a live Stripe account and turns the
@@ -51,7 +51,7 @@ placements, no featured listings, no advisor commissions: the three models the 2
 | For | Everyone; a parent's account and household; a counselor's office | One student's advisor through senior year |
 | Price | $0 | **$20 a year, per student** |
 | Paid by | | the student (any age), or a parent, who keeps one card for the household and pays for each student they add |
-| Trial | | **14 days from the day the student's record is made**, no card needed; add a card during it and the year starts when it ends |
+| Trial | | **14 days from the day the student's record is made**, with a card on file (owner: "always collect a card anytime a student is created"); charged automatically when the trial ends unless cancelled before then |
 
 **Annual only** (owner, 2026-10-26): a plan runs on the school year's rhythm, and a monthly price invites a family to
 subscribe in December and leave in May. At $20, Stripe's $0.30 + 2.9% is about 4.4% of revenue, so no annual-versus-monthly steering is needed on
@@ -213,10 +213,10 @@ until the owner's setup below.
 | | Who | What |
 |---|---|---|
 | **The price** | every student | **$20 a year**, one product, one Stripe Price. No family price, no tiers |
-| **The trial** | every student record | **14 days from the moment the record is made**, with no card: a student's own sign-up, a parent's Add a student, a counselor's invitation all start it, through one database trigger (`advisor_trials`). One trial per student, by construction |
-| **Who pays** | the student or a parent | A student of any age may pay for their own advisor (`/advisor/start` → Stripe Checkout, card collected, the first charge at the trial's end). A parent keeps **one card for the household** (Checkout in setup mode, nothing charged) and pays $20 for each student they add: the subscription is made on the server at the moment the student is added, trialing until the student's trial ends, then charged |
+| **The trial** | every student record | **14 days from the moment the record is made**: a student's own sign-up, a parent's Add a student, a counselor's invitation all start it, through one database trigger (`advisor_trials`). **A card is collected whenever a student is created** (owner, later on 2026-11-14) and **charged automatically when the trial ends unless cancelled before then**: a parent's card on file at Add a student; a student's own at the Advisor tab's door, which stays read-only until the card is saved. One trial per student, by construction |
+| **Who pays** | the student or a parent | A student of any age may pay for their own advisor (`/advisor/start` → Stripe Checkout, card collected, the charge at the trial's end). A parent keeps **one card for the household** (Checkout in setup mode, nothing charged) and pays $20 for each student they add: the subscription is made on the server at the moment the student is added, trialing until the student's trial ends, then charged |
 | **Free** | parents, counselors | A parent's account, the household, and everything a parent sees of a student's advisor; the counselor portal and everything in it |
-| **A counselor's student** | the student, or a parent | The record's trial starts when it is made; when the student logs in the Advisor tab asks for a card in the trial's last three days (quietly before). The counselor can **invite a parent** from the student's page; the parent joins the household and can pay |
+| **A counselor's student** | the student, or a parent | The record's trial starts when it is made; when the student logs in the Advisor tab asks for a card before it opens. The counselor can **invite a parent** from the student's page; the parent joins the household and can pay |
 | **Lapsed** | a trial that ended with no card; a cancelled or failed year | Read-only: the list, its levels, the calendar, and the offers stay; writes, the guides, the weekly email, the texts, and the alerts stop. Nothing deleted; a subscription restores it |
 | **Early accounts** | made before the switch | Free through 2027-08-31 ([open-doors.md](open-doors.md)), whatever their trial says |
 
@@ -229,7 +229,9 @@ sentence instead: under 18, a purchase is made with a parent or guardian's permi
 (`TrialRow`, `trialRunning()`), `stripeTrialEnd()` (Checkout needs the end at least 48 hours ahead, else the year starts
 today), `isEarly()` and the early period, `statusFrom(rows, trial)` (a paid year beats a trial; the database's trial
 counts as a trial; an ended trial with nothing paying is lapsed), `entitlementFrom()` (not live → whole; a live
-subscription → whole and `paid`; a running trial → whole; early → whole; else read-only), the **feature map** as one
+subscription → whole and `paid`; early → whole; a running trial with no card → read-only and `needsCard`; else
+read-only), `stripeTrialFor()` (the trial's own end for Checkout, the remaining day or two when closer than Checkout's
+two-day minimum, nothing when over), the **feature map** as one
 typed list (`FEATURE_MAP`, `allowedUnder(entitlement, capability, mode)`), the telemetry events a change in a row means
 (`billingEvents(prev, next)`), the chip's words, and the sentences.
 
@@ -284,15 +286,16 @@ forms (a card on file: nothing to do; none: add a card), and `siteOrigin()` for 
   the record exists, for a managed student and for one invited by email alike).
 - `/account`'s Advisor row: the card on file (Add or Change), each subscription this person pays for by the student's
   name with its date and Cancel / Keep, "Subscribe again" for a lapsed one, the Customer Portal for invoices and receipts.
-- The Advisor tab's line (`components/advisor/BillingLine.tsx`): a trial with no card, quietly "Trial ends Nov 28 · 14
-  days free, no card needed · Add a card to keep it", and a banner in the last three days; a trial a card pays for,
-  "Trial ends Nov 28, then the year starts · Manage"; lapsed, the read-only banner and Subscribe.
+- The Advisor tab's line (`components/advisor/BillingLine.tsx`): a trial waiting for its card, the banner "The free
+  trial runs until Nov 28. Add a card to open your advisor: nothing is charged until then, and cancelling before then
+  costs nothing." with the button, over a read-only plan; a trial a card pays for, quietly "Trial ends Nov 28, then the
+  year starts · Manage"; lapsed, the read-only banner and Subscribe.
 - `/pricing`: one price, "Parents and counselors: free", the map as a Free · Advisor table, the questions, what the
   money never buys; public and prerendered hourly (it reads the setting with the anonymous client). Linked from the
   footer.
-- The splash page: once live, "Start your 14-day free trial" and "14 days free, no card needed. $20 a year after.",
-  with sign-up back to `/advisor` (the trial starts with the record); the Questions gain the trial, the card, who pays,
-  and lapsing.
+- The splash page: once live, "Start your 14-day free trial" and "14 days free with your card on file, then $20 a year.
+  Cancel before the trial ends and pay nothing.", with sign-up back to `/advisor`, where the card is asked for; the
+  Questions gain the trial, the card, who pays, and lapsing.
 - `/api/cron/subscriptions` at 13:45 UTC: every live subscription refetched from Stripe through the same path; a missed
   `trial_will_end` reminder sent; and for **cardless trials** ending within three days with nothing paying, the "add a
   card" email to the student's own account (or the guardian managing the record), once per trial.

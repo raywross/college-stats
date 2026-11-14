@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { startCheckout, type StartState } from "@/app/advisor/start/actions";
 import { START_BUTTON } from "@/components/advisor/links";
-import { priceLabel, shortDay, stripeTrialEnd } from "@/lib/billing";
+import { priceLabel, shortDay, stripeTrialFor } from "@/lib/billing";
 
 export interface StartStudentOption {
   studentId: string;
@@ -25,7 +25,7 @@ export function StartForm({ students, card, isGuardian }: { students: StartStude
   const open = students.filter((s) => !s.paid);
   const [studentId, setStudentId] = useState<string>(open[0]?.studentId ?? "");
   const chosen = open.find((s) => s.studentId === studentId) ?? open[0];
-  const chargeAt = chosen && stripeTrialEnd(chosen.trialEnd) !== null ? shortDay(chosen.trialEnd!) : null;
+  const chargeAt = chosen && stripeTrialFor(chosen.trialEnd) !== null ? shortDay(chosen.trialEnd!) : null;
   const cardWords = card ? `${card.brand ? card.brand[0].toUpperCase() + card.brand.slice(1) : "the card"} ending ${card.last4 ?? "····"}` : null;
 
   return (
@@ -37,7 +37,7 @@ export function StartForm({ students, card, isGuardian }: { students: StartStude
         </div>
         <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
           <li>The whole advisor through senior year: the list with levels, the season&apos;s moves and guides, the calendar, the essays, the offers</li>
-          <li>{chargeAt ? `Free until ${chargeAt}, then charged yearly` : "Charged today, then yearly"}</li>
+          <li>{chargeAt ? `Free until ${chargeAt}, then ${priceLabel("student")}, charged automatically unless you cancel before then` : "Charged today, then yearly"}</li>
           {isGuardian && <li>Each student in your household has their own subscription; cancel any one from your account page</li>}
         </ul>
       </div>
@@ -72,15 +72,15 @@ export function StartForm({ students, card, isGuardian }: { students: StartStude
 
       <div className="flex flex-col items-start gap-2">
         <button type="submit" disabled={pending || !open.length} className={`${START_BUTTON} disabled:opacity-60`}>
-          {pending ? "One moment…" : cardWords ? `Use ${cardWords}` : chargeAt ? "Add a card to keep it" : "Subscribe"} <ArrowRight className="size-4" aria-hidden />
+          {pending ? "One moment…" : cardWords ? `Use ${cardWords}` : chargeAt ? "Add a card and open the advisor" : "Subscribe"} <ArrowRight className="size-4" aria-hidden />
         </button>
         <p className="text-xs text-muted-foreground">
           {cardWords
             ? chargeAt
-              ? `Nothing is charged until ${chargeAt}. Cancel before then from your account page and pay nothing.`
+              ? `Nothing is charged until ${chargeAt}, then ${priceLabel("student")} to the card on file. Cancel before then from your account page and pay nothing.`
               : `${priceLabel("student")} is charged to the card on file today.`
             : chargeAt
-              ? `Your card is collected now and nothing is charged until ${chargeAt}. Cancel before then and pay nothing.`
+              ? `Your card is saved now and charged ${priceLabel("student")} on ${chargeAt} unless you cancel before then, from your account page, at no cost.`
               : "The trial has ended, so the year starts as soon as the card is added."}
         </p>
       </div>

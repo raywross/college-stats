@@ -54,6 +54,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             initialError={params.error ? ERRORS[params.error] ?? ERRORS.link : undefined}
             initialMode={params.mode === "signup" ? "signup" : "signin"}
             initialRole={isRoleHint(params.role) ? params.role : "student"}
+            addressSuggestions={Boolean(process.env.GOOGLE_MAPS_API_KEY)}
           />
         )}
       </div>

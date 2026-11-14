@@ -122,7 +122,11 @@ test("the next round trip keeps the code (and the token) through Sign in and Cre
   // The login page reads ?role= and ?mode=, and the form takes the role for both sign-up paths.
   const login = read("app/login/page.tsx");
   assert.match(login, /initialRole=\{isRoleHint\(params\.role\) \? params\.role : "student"\}/);
-  assert.equal((read("app/login/LoginForm.tsx").match(/name="role_hint" defaultValue=\{role\}/g) ?? []).length, 2);
+  const form = read("app/login/LoginForm.tsx");
+  // Create an account preselects the role card from ?role= and posts it hidden; the magic-link path keeps its select.
+  assert.match(form, /useState<RoleHint>\(initialRole\)/);
+  assert.match(form, /<input type="hidden" name="role_hint" value=\{role\} \/>/);
+  assert.equal((form.match(/name="role_hint" defaultValue=\{role\}/g) ?? []).length, 1);
 });
 
 /* ------------------------------------------------------------------ */
@@ -414,7 +418,9 @@ test("a new counselor with nowhere particular to go lands on /org; nobody else m
   assert.match(read("app", "auth", "callback", "route.ts"), /firstLanding\(next, data\.user\.user_metadata\?\.role_hint, isFreshConfirmation\(data\.user\)\)/);
   assert.match(read("app", "auth", "confirm", "actions.ts"), /firstLanding\(target, data\.user\.user_metadata\?\.role_hint, isFreshConfirmation\(data\.user\)\)/);
   assert.match(read("app", "auth", "confirm", "ConfirmSignIn.tsx"), /completeSignIn\(fragment\.accessToken, fragment\.refreshToken, target\)/);
-  assert.match(read("app", "login", "actions.ts"), /redirect\(firstLanding\(next, role, true\)\)/);
+  // Password sign-up goes through /welcome (accounts.md "Sign-up", 2026-11-14), which applies the role's landing itself.
+  assert.match(read("app", "login", "actions.ts"), /redirect\(welcome\)/);
+  assert.match(read("app", "welcome", "page.tsx"), /redirect\(specific \? next : "\/org"\)/);
 });
 
 test("wiring: the splash's Counselors links to /org with the free line; routes, proxy, and metadata", () => {

@@ -1,6 +1,6 @@
 ---
 title: The Advisor's trial and billing, built and waiting for the switch
-pr: 0
+pr: 251
 date: 2026-11-14
 kind: feature
 summary: Quad Advisor can now be sold the way the owner decided, 14 days free with a card on file and then $20 a year for one student or $30 for a family, but nothing changes on the site until the owner connects Stripe and turns the price on.

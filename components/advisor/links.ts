@@ -25,6 +25,10 @@ export interface AdvisorOffer {
   href: string;
 }
 
+/** The button every section that has one uses (and the upgrade sheet's): violet, pill, 48px. */
+export const START_BUTTON =
+  "inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary/90";
+
 /** The preview's offer (build order step 2): "Start free", the preview price line, sign-up back to /advisor. */
 export const PREVIEW_OFFER: AdvisorOffer = { live: false, cta: "Start free", priceLine: PRICE_LINE, href: START_HREF };
 

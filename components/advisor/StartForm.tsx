@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { startCheckout, type StartState } from "@/app/advisor/start/actions";
-import { START_BUTTON } from "@/components/advisor/sections/Hero";
+import { START_BUTTON } from "@/components/advisor/links";
 
 export interface StartStudentOption {
   studentId: string;

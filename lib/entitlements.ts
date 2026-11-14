@@ -16,11 +16,13 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  ADVISOR_STATUS_LABEL,
   allowedUnder,
   entitlementFrom,
   FEATURE_MAP,
   parsePriceLiveAt,
   PRICE_LIVE_SETTING,
+  type AdvisorStatus,
   type Entitlement,
   type StatusWord,
   type SubscriptionRow,
@@ -155,22 +157,8 @@ export async function allowed(user: { id: string } | null, capability: Capabilit
 /* Status words                                                        */
 /* ------------------------------------------------------------------ */
 
-/**
- * A student's advisor status, the one fact about money a counselor sees (specs/product/counselor-portal.md "The
- * caseload", "The channel"): a quiet chip on the caseload row, never a price. "preview" for everyone until billing
- * ships (the price not live); then Advisor, Trial, Not yet, or Lapsed. An early account reads "Advisor": the guides
- * open for them.
- */
-export type AdvisorStatus = "preview" | "trial" | "active" | "none" | "lapsed";
-
-/** The chip's words. */
-export const ADVISOR_STATUS_LABEL: Record<AdvisorStatus, string> = {
-  preview: "Preview",
-  trial: "Trial",
-  active: "Advisor",
-  none: "Not yet",
-  lapsed: "Lapsed",
-};
+/** The chip's status and words live in lib/billing.ts (pure, client-safe for the caseload); re-exported for the pages. */
+export { ADVISOR_STATUS_LABEL, type AdvisorStatus };
 
 /** The status word an entitlement shows: whole by subscription or early is "active", a trial "trial", else the plan's state. */
 export function statusWordOf(e: Entitlement): Exclude<AdvisorStatus, "preview"> {

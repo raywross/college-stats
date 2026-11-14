@@ -2,13 +2,12 @@ import { ArrowRight } from "lucide-react";
 import { CtaLink } from "@/components/advisor/CtaLink";
 import { PhoneFrame } from "@/components/advisor/Frame";
 import { SampleNow } from "@/components/advisor/SampleNow";
-import { PREVIEW_OFFER, type AdvisorOffer } from "@/components/advisor/links";
+import { PREVIEW_OFFER, START_BUTTON, type AdvisorOffer } from "@/components/advisor/links";
 import type { SplashData } from "@/components/advisor/sample";
 import { ADVISOR_NAME } from "@/lib/planner/advisor";
 
-/** The button every section that has one uses: violet, pill, 48px. */
-export const START_BUTTON =
-  "inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary/90";
+/** The button's classes live in links.ts (pure) so the client-side upgrade sheet shares them; re-exported for the sections. */
+export { START_BUTTON };
 
 /**
  * The hero (advisor.md "3. The page", Hero): the eyebrow, the headline in the display face, the one sentence, "Start

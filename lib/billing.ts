@@ -200,6 +200,23 @@ export function decidingRow<R extends Pick<SubscriptionRow, "status" | "updated"
   return [...pool].sort((a, b) => b.updated.localeCompare(a.updated))[0] ?? null;
 }
 
+/**
+ * A student's advisor status, the one fact about money a counselor sees (specs/product/counselor-portal.md "The
+ * caseload", "The channel"): a quiet chip on the caseload row, never a price. "preview" for everyone until billing
+ * ships (the price not live); then Advisor, Trial, Not yet, or Lapsed. An early account reads "Advisor": the guides
+ * open for them. Here, not in lib/entitlements.ts, because client components import the caseload module.
+ */
+export type AdvisorStatus = "preview" | "trial" | "active" | "none" | "lapsed";
+
+/** The chip's words. */
+export const ADVISOR_STATUS_LABEL: Record<AdvisorStatus, string> = {
+  preview: "Preview",
+  trial: "Trial",
+  active: "Advisor",
+  none: "Not yet",
+  lapsed: "Lapsed",
+};
+
 /* ------------------------------------------------------------------ */
 /* Entitlements                                                        */
 /* ------------------------------------------------------------------ */

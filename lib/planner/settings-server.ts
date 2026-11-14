@@ -12,12 +12,16 @@ import "server-only";
 import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { TODAY_SETTING } from "./today";
+import { PRICE_LIVE_SETTING } from "../billing.ts";
 
 /** The all-moves preview's key (lib/planner/all-moves.ts; supabase/migrations/20261021120000_app_settings.sql). */
 export const ALL_MOVES_SETTING = "planner.all_moves";
 
-/** Every key the planner reads, in one `.in("key", …)`. */
-export const PLANNER_SETTING_KEYS = [TODAY_SETTING, ALL_MOVES_SETTING] as const;
+/** When the Advisor's price went live (lib/billing.ts; lib/entitlements.ts reads it from this same read). */
+export const PRICE_LIVE_SETTING_KEY = PRICE_LIVE_SETTING;
+
+/** Every key the planner reads, in one `.in("key", …)`: its two settings and the entitlement hook's one. */
+export const PLANNER_SETTING_KEYS = [TODAY_SETTING, ALL_MOVES_SETTING, PRICE_LIVE_SETTING] as const;
 
 /** The planner's settings by key (a missing row is a missing key), or null when the read failed. */
 export const appSettings = cache(async (): Promise<ReadonlyMap<string, unknown> | null> => {

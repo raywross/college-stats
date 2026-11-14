@@ -699,6 +699,12 @@ export const HELP = {
     short: "When on, Next steps lists every move by season, for testing; students see the usual short list when off.",
     door: "more",
   },
+  "price-live": {
+    title: "Price live",
+    short: "The moment the Advisor's price went live. Unset, the Advisor is free for everyone; set, accounts made before it keep it free through the cycle and everyone else starts a 14-day trial.",
+    do: "Set it the day Stripe is connected and the pricing page is right. Clearing it makes the Advisor free again for everyone.",
+    door: "more",
+  },
   log: {
     title: "Log",
     short: "Every admin action, newest first: who did it, to what, and when. The log holds no token, link, or password.",

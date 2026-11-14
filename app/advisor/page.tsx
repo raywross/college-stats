@@ -11,6 +11,7 @@ import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanPeople, type PlanPerson, type PlanPersonDetail } from "@/components/planner/PlanPeople";
 import { Splash } from "@/components/advisor/Splash";
+import { BillingLine } from "@/components/advisor/BillingLine";
 import { authConfigured, currentStudent, getUser } from "@/lib/auth";
 import { counselorAccessFor, type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import type { StudentAccess } from "@/lib/accounts";
@@ -215,7 +216,17 @@ async function counselorPlan(
  * plan|record` says where saving or closing it returns to (default the plan). `?joined=<grant id>` adds the one line
  * after joining a counselor (components/account/JoinedNotice.tsx).
  */
-export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string; joined?: string }> }) {
+type PlanSearch = { for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string; joined?: string; trial?: string; subscribed?: string };
+
+/** The one-time line after Stripe Checkout comes back (`/advisor/start/return`): `?trial=started|pending` or `?subscribed=1`. */
+function welcomeOf(p: { trial?: string; subscribed?: string }): "started" | "subscribed" | "pending" | null {
+  if (p.trial === "started") return "started";
+  if (p.trial === "pending") return "pending";
+  if (p.subscribed === "1") return "subscribed";
+  return null;
+}
+
+export default async function PlanPage(props: { searchParams: Promise<PlanSearch> }) {
   await connection();
   const page = await withTiming("/advisor", () => renderPlan(props));
   // `?joined=<grant id>`: the one line after joining a counselor (app/join/[code]/actions.ts).
@@ -232,13 +243,11 @@ export default async function PlanPage(props: { searchParams: Promise<{ for?: st
   );
 }
 
-async function renderPlan({
-  searchParams,
-}: {
-  searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }>;
-}) {
+async function renderPlan({ searchParams }: { searchParams: Promise<PlanSearch> }) {
   if (!authConfigured()) return <AuthUnavailable />;
-  const { for: forParam, tab: tabParam, setup: setupParam, record: recordParam, step: stepParam, back: backParam } = await searchParams;
+  const params = await searchParams;
+  const { for: forParam, tab: tabParam, setup: setupParam, record: recordParam, step: stepParam, back: backParam } = params;
+  const welcome = welcomeOf(params);
   // `record=1` alone expands the record overview on this page (RecordInline; owner 2026-10-16); with `step=n` it opens
   // the tour at that step, as `setup=1` does.
   const recordInline = recordParam === "1" && !stepParam;
@@ -289,6 +298,7 @@ async function renderPlan({
     const essays = await essaysFor(loaded, "student");
     return (
       <PlanFrame
+        billing={<BillingLine studentId={viewer.student.id} viewerId={user.id} firstName={null} welcome={welcome} />}
         people={<PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />}
         ctx={loaded.ctx}
         view={loaded.view}
@@ -368,6 +378,7 @@ async function renderPlan({
   const essays = await essaysFor(load, "guardian");
   return (
     <PlanFrame
+      billing={<BillingLine studentId={selected} viewerId={user.id} firstName={firstNameOf(meta.name)} welcome={welcome} />}
       people={line}
       ctx={load.ctx}
       view={load.view}

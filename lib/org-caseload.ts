@@ -21,7 +21,7 @@ import type { PlanTask } from "./planner/types.ts";
 import { CATEGORY_LABELS, OUTCOME_LABELS, ROUND_LABELS, STATUS_LABELS, type ListCategory, type ListOutcome, type ListRound, type ListStatus } from "./list-rules.ts";
 import { effectiveGradYear, profileForViewer, sanitizeProfile, type StudentProfileData } from "./student-profile.ts";
 import type { StandingLevel } from "./chances/types.ts";
-import { ADVISOR_STATUS_LABEL, type AdvisorStatus } from "./entitlements.ts";
+import { ADVISOR_STATUS_LABEL, type AdvisorStatus } from "./billing.ts";
 import type { OpenOrgAsk, OrgAsk, OrgAskKind, OrgNote, OrgRosterRow, Organization } from "./org-rules.ts";
 import type { OrgCaseloadBundle, OrgStudentBundle } from "./bundle-read.ts";
 import { parseTodaySetting } from "./planner/today.ts";

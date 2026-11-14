@@ -41,7 +41,7 @@ const STUBS: Record<string, string> = {
   "@/components/high-schools/HighSchoolPicker": stub("picker.mjs", `import React from "react";\nexport const HighSchoolPicker = ({ idName }) => React.createElement("input", { name: idName, "data-picker": "1" });`),
   "@/app/org/actions": stub(
     "org-actions.mjs",
-    ["createOrganization", "updateOrganization", "regenerateJoinCode", "setMemberRole", "removeMember", "leaveOrganization", "deleteOrganization", "inviteStudents", "resendStudentInvitation", "cancelOrgInvitation", "inviteCounselor", "askStudent", "completeAsk", "markAsksSeen", "addOrgNote", "deleteOrgNote"]
+    ["createOrganization", "updateOrganization", "regenerateJoinCode", "setMemberRole", "removeMember", "leaveOrganization", "deleteOrganization", "inviteStudents", "resendStudentInvitation", "cancelOrgInvitation", "inviteCounselor", "askStudent", "completeAsk", "markAsksSeen", "addOrgNote", "deleteOrgNote", "inviteParent"]
       .map((n) => `export async function ${n}() { return { status: "idle" }; }`)
       .join("\n"),
   ),

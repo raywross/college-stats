@@ -76,6 +76,10 @@ then shows only what that role needs.
   guardians add either.
 - Seats: a student with an email takes one seat, not two (the invitation hands over the record, which already holds
   it), as the six-seat rule already says ([accounts.md](accounts.md#rules)).
+- **Billing (2026-11-14):** once Quad Advisor's price is live, a guardian adding a student needs the household's card
+  on file first (`/account/billing/card`, Stripe Checkout in setup mode, nothing charged) and is sent there and back;
+  the student then gets a subscription on the guardian's card, free for the 14-day trial every new record starts, then
+  $20 a year ([commercialization.md](commercialization.md#as-built-2026-11-14)). Adding a parent never involves a card.
 
 ### The invited person's first visit
 1. The link opens `/auth/confirm` signed in (Supabase's invite link, implicit flow), which sends them to

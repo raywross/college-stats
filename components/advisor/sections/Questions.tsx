@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SplashSection } from "@/components/advisor/Frame";
+import { priceLabel, TRIAL_DAYS } from "@/lib/billing";
 
 /**
- * Questions (advisor.md "3. The page", Questions), as a `<details>` list. The trial, card, cancel, and lapse questions
- * wait for the trial (build order step 3); these four hold today.
+ * Questions (advisor.md "3. The page", Questions), as a `<details>` list. Four hold while Quad is in preview; once the
+ * price is live (build order step 3) the trial, card, cancel, family-price, and lapse questions join them.
  */
 export const QUESTIONS: { q: string; a: ReactNode }[] = [
   {
@@ -36,11 +37,41 @@ export const QUESTIONS: { q: string; a: ReactNode }[] = [
   },
 ];
 
-export function Questions() {
+/** The questions once the price is live (advisor.md "Questions": the trial, the card, cancelling, what stays free, students and parents, lapsing). */
+export const TRIAL_QUESTIONS: { q: string; a: ReactNode }[] = [
+  {
+    q: "How does the free trial work?",
+    a: <>Create an account, put a card on file, and the whole advisor is yours for {TRIAL_DAYS} days. When the trial ends the card is charged {priceLabel("student")}, annual only, and the advisor carries on. Cancel before the trial ends and nothing is charged.</>,
+  },
+  {
+    q: "Why a card up front?",
+    a: <>So the advisor carries on without a gap when the trial ends. Payment is handled by Stripe; Quad never sees your card, only its brand and last four digits.</>,
+  },
+  {
+    q: "How do I cancel?",
+    a: <>From your account page, any time, in one tap. A subscription cancelled runs to the end of what&apos;s paid. Everything you entered stays.</>,
+  },
+  {
+    q: "What stays free?",
+    a: <>Every college&apos;s page, Explore, Compare, the data, the glossary, your account, your record, and Quad&apos;s estimate on every college page. The advisor is what&apos;s built on them.</>,
+  },
+  {
+    q: "Who pays, the student or the parent?",
+    a: <>Either. A student can start their own trial and pay for their own advisor. A parent keeps one card for the household and pays for each student they add, {priceLabel("student")} each. Parents and counselors never pay for their own accounts.</>,
+  },
+  {
+    q: "What happens if I stop paying?",
+    a: <>The advisor turns read-only: the list, its levels, the calendar, and the offers stay; the guides, the changes, the texts, and the alerts stop. Nothing is deleted, and subscribing again restores everything.</>,
+  },
+  QUESTIONS[3],
+];
+
+export function Questions({ live = false }: { live?: boolean }) {
+  const list = live ? TRIAL_QUESTIONS : QUESTIONS;
   return (
     <SplashSection id="questions" title="Questions" line="The short answers.">
       <div className="divide-y overflow-hidden rounded-3xl border bg-card">
-        {QUESTIONS.map(({ q, a }) => (
+        {list.map(({ q, a }) => (
           <details key={q} className="group px-4 sm:px-5">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
               {q}

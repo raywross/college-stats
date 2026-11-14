@@ -14,6 +14,7 @@ import { getData } from "@/lib/data";
 import { offerFacts } from "@/lib/planner/offers-server";
 import { emptyProfile } from "@/lib/student-profile";
 import { buildSplash, type SampleFixture } from "./sample";
+import { advisorOffer, PREVIEW_OFFER, type AdvisorOffer } from "./offer";
 import { SplashBeacon } from "./SplashBeacon";
 import { Hero } from "./sections/Hero";
 import { WhereYouStand } from "./sections/WhereYouStand";
@@ -41,8 +42,10 @@ const MOTION_CSS = `@supports (animation-timeline: view()) {
   .splash-rise, .splash-pop { animation: none !important; }
 }`;
 
-export async function Splash({ signedIn = false }: { signedIn?: boolean }) {
-  const ds = await getData();
+export async function Splash({ signedIn = false, offer: given }: { signedIn?: boolean; offer?: AdvisorOffer }) {
+  // The offer (components/advisor/offer.ts): the preview's "Start free", or the trial once the price is live. Tests
+  // pass one; the page reads the setting.
+  const [ds, offer] = await Promise.all([getData(), given ? Promise.resolve(given) : advisorOffer().catch(() => PREVIEW_OFFER)]);
   const base = emptyProfile();
   const profile = { ...base, basics: { ...base.basics, stateOfResidence: SAMPLE.homeState } };
   const facts = await offerFacts(
@@ -56,7 +59,7 @@ export async function Splash({ signedIn = false }: { signedIn?: boolean }) {
     <div className="-mx-4 -mt-5 -mb-12 sm:-mx-6 sm:-mt-10" data-splash>
       <style>{MOTION_CSS}</style>
       <SplashBeacon signedIn={signedIn} />
-      <Hero data={data} />
+      <Hero data={data} offer={offer} />
       <WhereYouStand data={data} />
       <ThisSeason data={data} />
       <NeverMissADate data={data} />
@@ -65,8 +68,8 @@ export async function Splash({ signedIn = false }: { signedIn?: boolean }) {
       <WhatItReads data={data} />
       <WhatItNeverDoes />
       <Counselors />
-      <Questions />
-      <Close />
+      <Questions live={offer.live} />
+      <Close offer={offer} />
     </div>
   );
 }

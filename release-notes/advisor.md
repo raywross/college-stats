@@ -32,4 +32,4 @@ summary: The Plan tab is now Advisor, every link to the old address still works,
 - The splash page renders the product's own components over one fixture (`data/reference/sample-plan.json`); its
   move titles and deadlines are checked against the move catalog and the dataset, so the page can't drift from the
   product. The old signed-out plan is gone; a list kept in the browser before this release still imports on sign-in.
-- The 14-day trial and its billing are the next step ([the advisor's plan](/roadmap/advisor)).
+- The 14-day trial and its billing are the next step (built since: [the trial and billing](/release-notes/billing)).

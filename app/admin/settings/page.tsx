@@ -8,7 +8,9 @@ import { fmtDate } from "@/lib/admin/console";
 import { adminSupabase } from "@/lib/admin/people";
 import { ALL_MOVES_SETTING } from "@/lib/planner/all-moves-server";
 import { isoDay, overrideAllowed, pretendTodayLine, TODAY_SETTING } from "@/lib/planner/today";
-import { setAllMoves, setPretendToday } from "./actions";
+import { parsePriceLiveAt, PRICE_LIVE_SETTING, type SubscriptionRow } from "@/lib/billing";
+import { billingConfigured } from "@/lib/entitlements";
+import { setAllMoves, setPretendToday, setPriceLive } from "./actions";
 
 export const metadata: Metadata = { title: "Settings", robots: { index: false, follow: false } };
 
@@ -26,6 +28,14 @@ export default async function SettingsPage() {
   const todayRow = await supabase.from("app_settings").select("value, updated_at").eq("key", TODAY_SETTING).maybeSingle();
   const pretend = isoDay(todayRow.data?.value);
   const honored = overrideAllowed();
+  // The Advisor's price (specs/product/commercialization.md; open-doors.md "Early accounts"): the moment it went live,
+  // whether Stripe is configured on this deployment, and the subscriptions by status (admins read every row).
+  const liveRow = await supabase.from("app_settings").select("value, updated_at").eq("key", PRICE_LIVE_SETTING).maybeSingle();
+  const liveAt = parsePriceLiveAt(liveRow.data?.value);
+  const stripeOn = billingConfigured();
+  const subs = await supabase.from("subscriptions").select("status, product");
+  const counts = new Map<string, number>();
+  for (const s of (subs.data ?? []) as Pick<SubscriptionRow, "status" | "product">[]) counts.set(`${s.product} ${s.status}`, (counts.get(`${s.product} ${s.status}`) ?? 0) + 1);
 
   return (
     <>
@@ -46,6 +56,37 @@ export default async function SettingsPage() {
                 hidden={{ on: on ? "0" : "1" }}
                 trigger={on ? "Turn off" : "Turn on"}
                 tone={on ? "default" : "primary"}
+              />
+            )}
+          </div>
+        </Panel>
+        <Panel
+          help="price-live"
+          title="Advisor price"
+          id="price-live"
+          aside={<StatusChip label={liveAt ? (stripeOn ? "Live" : "Set, Stripe missing") : "Free for all"} tone={liveAt && stripeOn ? "info" : "neutral"} />}
+        >
+          <div className="space-y-3 text-sm">
+            <p className="max-w-3xl text-muted-foreground">
+              Unset, Quad Advisor is free for every account and nothing is sold. Set, every new student starts a 14-day trial with a card on file and is charged when it ends unless cancelled,
+              accounts made before the moment keep the advisor free through the end of the cycle, and a subscription that lapses turns the advisor read-only.
+              Needs Stripe&apos;s keys and price ids on this deployment{stripeOn ? " (set)" : " (not set here: with the setting on, the site still gates nothing until they are)"}.
+            </p>
+            {liveAt && <p className="font-medium">Live since {fmtDate(liveAt.toISOString())}.</p>}
+            {liveRow.data?.updated_at && <p className="text-xs text-muted-foreground">Last changed {fmtDate(liveRow.data.updated_at)}</p>}
+            {subs.error ? (
+              <p className="text-destructive">The subscriptions table isn&apos;t there yet: apply migration 20261114120000_subscriptions.sql.</p>
+            ) : counts.size > 0 ? (
+              <p className="text-xs text-muted-foreground">Subscriptions: {[...counts.entries()].map(([k, n]) => `${n} ${k}`).join(" · ")}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">No subscriptions yet.</p>
+            )}
+            {!error && (
+              <AdminForm
+                action={setPriceLive}
+                hidden={{ live: liveAt ? "0" : "1" }}
+                trigger={liveAt ? "Make the advisor free again" : "Turn the price on"}
+                tone={liveAt ? "default" : "primary"}
               />
             )}
           </div>

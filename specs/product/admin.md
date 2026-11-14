@@ -438,6 +438,7 @@ refuses a key it doesn't know (`unknown_setting`) or a value of the wrong type (
 |---|---|---|
 | `planner.all_moves` | boolean, default off | The planner's all-moves preview ([all-moves-preview.md](../planner/v3/all-moves-preview.md)) |
 | `planner.today` | `YYYY-MM-DD` or null, default null | Pretend today, for walking a plan through its seasons ([pretend-today.md](../planner/v3/pretend-today.md)); ignored in production |
+| `advisor.price_live_at` | an ISO timestamp or null, default null | The moment Quad Advisor's price went live ([commercialization.md](commercialization.md#as-built-2026-11-14); [open-doors.md](open-doors.md#what-we-promise-and-what-we-say)). Null: the advisor is free for every account and nothing is gated or sold. Set: accounts created before it are early accounts (free through 2027-08-31), everyone else starts the 14-day trial, and a lapsed plan is read-only. The panel's one button sets it to now or clears it; it also shows whether Stripe is configured here and the subscriptions by status |
 
 A new setting adds its key to `admin_set_setting`'s list in a migration, and a panel to the page.
 

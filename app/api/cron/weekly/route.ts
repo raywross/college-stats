@@ -11,6 +11,7 @@ import { buildYourWeek, type WeekLine } from "@/lib/emails/your-week";
 import { buildParentSummary, type ParentSummaryStudent } from "@/lib/emails/parent-summary";
 import { briefContent, buildSeasonBrief, firstClause } from "@/lib/emails/season-brief";
 import { trackServer } from "@/lib/analytics-server";
+import { entitledStudents } from "@/lib/entitlements";
 import { loadCycle } from "@/lib/planner/cycle";
 import { NO_MONEY, stuckSignals, summaryLine } from "@/lib/planner/summary";
 import { planCycleKey, readItems, todayIso } from "@/lib/planner/context";
@@ -82,8 +83,12 @@ async function run(request: NextRequest) {
 
   const { data: students, error } = await client.from("students").select("id, user_id, display_name, grad_year").is("deleted_at", null);
   if (error) return Response.json({ error: `Reading students failed: ${error.message}` }, { status: 500 });
+  // Reminders are the advisor's (specs/product/commercialization.md "When a plan lapses": the texts and the emails
+  // stop); everyone while the price isn't live (lib/entitlements.ts entitledStudents).
+  const entitled = await entitledStudents(client, ((students ?? []) as StudentRow[]).map((s) => s.id), "planner.reminders");
 
   for (const s of (students ?? []) as StudentRow[]) {
+    if (!entitled.has(s.id)) continue;
     try {
       const plan = await movesFor(s);
       if (!plan) continue;

@@ -214,7 +214,8 @@ test("appSettings reads both planner settings in one query; pretend today and th
   assert.equal(g.__planWaves.calls.length, 1, "one read for both settings");
   assert.equal(g.__planWaves.calls[0].table, "app_settings");
   assert.deepEqual(g.__planWaves.calls[0].filters, [["in", "key", [...PLANNER_SETTING_KEYS]]]);
-  assert.deepEqual([...PLANNER_SETTING_KEYS].sort(), ["planner.all_moves", "planner.today"]);
+  // The entitlement hook's key rides along (lib/entitlements.ts priceLiveAt), so a plan page pays no extra read for it.
+  assert.deepEqual([...PLANNER_SETTING_KEYS].sort(), ["advisor.price_live_at", "planner.all_moves", "planner.today"]);
   if (hadEnv !== undefined) process.env.VERCEL_ENV = hadEnv;
   // Neither reader queries the table on its own any more.
   for (const f of ["lib/planner/today-server.ts", "lib/planner/all-moves-server.ts"]) assert.doesNotMatch(read(f), /from\("app_settings"\)/, f);

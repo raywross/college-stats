@@ -27,6 +27,7 @@ Two runners, one table (`lib/jobs/registry.ts` `JOBS`):
 | Interest confirmations | Vercel | every day 13:30 | |
 | Weekly emails and texts | Vercel | Sundays 23:00 | |
 | Day-before texts | Vercel | Monday to Saturday 23:00 | Sunday belongs to the weekly job |
+| Subscriptions reconcile | Vercel | every day 13:45 | nothing until Stripe is configured; rewrites every live Quad Advisor subscription from Stripe and sends a missed trial reminder ([commercialization.md](commercialization.md#as-built-2026-11-14)) |
 | College-reported data | GitHub | Mondays 13:17 (Mar–May, Aug–Nov); the 1st 13:17 (Dec–Feb, Jun–Jul); the 15th 13:17 (Jun–Jul); :07 and :37 every hour (collect) | the collect firing is housekeeping |
 | Data Steward | GitHub | Sundays 09:00 (the weekly audit) | also runs after every college-reported run that read or collected something (`workflow_run`, not a schedule of its own); by hand or from the console |
 | Identity refresh | GitHub | every day 06:00 | does the refresh only when the last probe is 28+ days old |

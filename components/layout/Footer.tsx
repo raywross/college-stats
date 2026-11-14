@@ -49,7 +49,11 @@ export function Footer() {
             <HoverPrefetchLink href="/privacy" className="font-semibold text-foreground hover:text-primary">
               Privacy
             </HoverPrefetchLink>
-            : how we count visits, and what we never record.
+            : how we count visits, and what we never record.{" "}
+            <HoverPrefetchLink href="/pricing" className="font-semibold text-foreground hover:text-primary">
+              Pricing
+            </HoverPrefetchLink>
+            : what stays free, and what the advisor costs.
           </p>
         </div>
       </div>

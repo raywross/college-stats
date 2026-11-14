@@ -110,7 +110,12 @@ export interface PlanItemColumns { dream: boolean; priority: number | null; foll
 export type PlanItem = import("../list-rules").ListItem & PlanItemColumns;
 /** lists gains: sort text null, rounds_plan_accepted_at timestamptz null. */
 export type ListSort = "mine" | "category" | "dream_priority" | "next_date" | "admit_rate" | "avg_cost" | "distance" | "standing";
-export type Capability = "planner.tab" | "planner.rounds" | "planner.actions.visits" | "planner.calendar" | "planner.reminders" | "planner.texts" | "planner.parents.nudge" | "planner.offers" | "advisor.essays" | "advisor.reviews";
+/** The planner's eight capabilities, the essays workspace's two, and the commercial model's rows beyond the planner
+ *  (specs/product/commercialization.md "Feature map"): every name `allowed()` (lib/entitlements.ts) takes. */
+export type Capability =
+  | "planner.tab" | "planner.rounds" | "planner.actions.visits" | "planner.calendar" | "planner.reminders" | "planner.texts" | "planner.parents.nudge" | "planner.offers"
+  | "advisor.essays" | "advisor.reviews"
+  | "visits.view" | "visits.alerts" | "api.key" | "cost.family" | "plan.dossier";
 
 /** Everything a stage panel gets, computed once by PlanPage (server) and passed down. Serializable: client stage
  *  components receive the parts they need as props; no functions. */

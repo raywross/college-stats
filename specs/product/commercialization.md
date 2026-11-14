@@ -316,10 +316,16 @@ a student joining a household by code (a student invites a parent from Household
 Terms of service, the privacy page's payments paragraph, and the business and tax setup (the owner's list above).
 
 ## Setup (owner)
-In order; nothing is sold until step 6, and nothing on the site changes until then either. Steps 1 to 4 were done for
-the **sandbox** on 2026-11-14 (the one product with its $20 yearly price, the webhook destination pointed at the
-`feature/billing` branch preview with Vercel's protection-bypass secret on the URL, the three values on Vercel Preview
-and in `.env.local`, both migrations applied to dev); the live account's steps remain.
+In order; nothing is sold until the switch, and nothing on the site changes until then either. **Done 2026-11-14 for both
+the sandbox and the live account**: the one product with its $20 yearly price (the family product archived in both), a
+webhook destination each (the sandbox's at the `feature/billing` branch preview with Vercel's protection-bypass secret
+on the URL; the live one at `https://usequad.app/api/stripe/webhook`), the Customer Portal configured through the API in
+both (cancel at period end, update the card, invoice history; the terms link left empty until `/terms` exists), the
+three values on Vercel Preview (sandbox) and Production (live, entered without touching a laptop file), both migrations
+applied to the dev project, which production also serves until [launch-database.md](../launch-database.md). The live
+key is a **restricted key** with the permissions the app needs (customers, checkout and portal sessions, subscriptions,
+products, webhooks), probed with a throwaway customer and expired sessions. Left for the owner: the dashboard-only
+switches in step 4's second sentence, the Terms, Stripe Tax, and the switch itself.
 
 1. **The Stripe account**: the business behind Quad (legal name, address, EIN or SSN, a bank account for payouts) and a
    statement descriptor ("QUAD ADVISOR" fits). Stripe's dashboard has no Developers tab for new accounts: the keys are at

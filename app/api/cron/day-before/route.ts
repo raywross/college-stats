@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { withJobRun } from "@/lib/jobs/record";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient } from "@/lib/supabase";
+import { entitledStudents } from "@/lib/entitlements";
 import { composeDayBeforeText, smsConfigured } from "@/lib/sms";
 import { todayIso } from "@/lib/planner/context";
 import { CONSENT_COLUMNS, deliverText, readListTasks, type ConsentRow } from "@/lib/planner/reminders-server";
@@ -37,8 +38,12 @@ async function run(request: NextRequest) {
     .is("revoked_at", null)
     .is("provider_opt_out_at", null);
   if (error) return Response.json({ error: `Reading consents failed: ${error.message}` }, { status: 500 });
+  // Texts are the advisor's (commercialization.md "When a plan lapses"); everyone while the price isn't live.
+  const consents = (data ?? []) as ConsentRow[];
+  const entitled = await entitledStudents(client, consents.map((c) => c.student_id!).filter(Boolean), "planner.texts");
 
-  for (const consent of (data ?? []) as ConsentRow[]) {
+  for (const consent of consents) {
+    if (!consent.student_id || !entitled.has(consent.student_id)) continue;
     summary.consents++;
     try {
       const list = await client.from("lists").select("id").eq("student_id", consent.student_id!).eq("is_default", true).maybeSingle();

@@ -205,10 +205,20 @@ export interface AnalyticsEvents {
   org_ask_sent: { kind: "record_section" | "list" | "custom" };
   /** The caseload opened, with its size as a bucket. */
   org_caseload_viewed: { size: "1-5" | "6-25" | "26-100" | "100+" };
+  /** Billing (specs/product/commercialization.md): the product and the price variant's key, never a dollar figure beyond the published prices. */
+  trial_started: { product: BillingProduct; price_variant: string };
+  trial_reminder_sent: { product: BillingProduct };
+  trial_converted: { product: BillingProduct; price_variant: string };
+  /** `day`: which day of the 14 the cancellation landed on. */
+  trial_cancelled: { product: BillingProduct; day: number | null };
+  subscription_cancelled: { product: BillingProduct };
+  subscription_renewed: { product: BillingProduct; price_variant: string };
 }
+/** lib/billing.ts Product, named here so this registry stays free of imports beyond its own. */
+type BillingProduct = "student" | "family";
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish" | "org_created" | "org_student_invited" | "org_student_joined" | "org_ask_sent";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish" | "org_created" | "org_student_invited" | "org_student_joined" | "org_ask_sent" | "trial_started" | "trial_reminder_sent" | "trial_converted" | "trial_cancelled" | "subscription_cancelled" | "subscription_renewed";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -355,6 +365,12 @@ export const EVENTS = {
   org_student_joined: { properties: ["source", "new_account"], side: "server", why: "Counselor portal: students joining a caseload, by door" },
   org_ask_sent: { properties: ["kind"], side: "server", why: "Counselor portal: asks sent to students, by kind" },
   org_caseload_viewed: { properties: ["size"], side: "client", why: "Counselor portal: caseloads opened, by size" },
+  trial_started: { properties: ["product", "price_variant"], side: "server", why: "Billing: trials started, by product and the price shown" },
+  trial_reminder_sent: { properties: ["product"], side: "server", why: "Billing: the one reminder three days before a trial ends" },
+  trial_converted: { properties: ["product", "price_variant"], side: "server", why: "Billing: trials that became a paid year, by product and price (the conversion curve)" },
+  trial_cancelled: { properties: ["product", "day"], side: "server", why: "Billing: trials cancelled before the charge, and on which day" },
+  subscription_cancelled: { properties: ["product"], side: "server", why: "Billing: paid years cancelled or lapsed after failed charges" },
+  subscription_renewed: { properties: ["product", "price_variant"], side: "server", why: "Billing: yearly renewals, by product and the price they renew at" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

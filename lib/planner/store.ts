@@ -31,11 +31,11 @@ const SIGN_IN = "Sign in first.";
 
 type Ready = { userId: string; supabase: Awaited<ReturnType<typeof createServerSupabase>> };
 
-async function ready(capability: Capability): Promise<Ready | { ok: false; message: string }> {
+async function ready(capability: Capability, mode: "read" | "write" = "write"): Promise<Ready | { ok: false; message: string }> {
   if (!authConfigured()) return { ok: false, message: SIGN_IN };
   const user = await getUser();
   if (!user) return { ok: false, message: SIGN_IN };
-  if (!(await allowed(user, capability))) return { ok: false, message: NOT_ALLOWED_MESSAGE };
+  if (!(await allowed(user, capability, { mode }))) return { ok: false, message: NOT_ALLOWED_MESSAGE };
   return { userId: user.id, supabase: await createServerSupabase() };
 }
 
@@ -59,7 +59,8 @@ const ASSIGNEES: readonly Assignee[] = ["student", "guardian", "either"];
 /** A list's plan in one read (list, items, tasks, visits, offers, nudges), as the signed-in user may see it. */
 export async function planFor(listId: string): Promise<PlanData | null> {
   if (!isUuid(listId)) return null;
-  const r = await ready("planner.tab");
+  // A read: a lapsed plan keeps its list, calendar, and offers (commercialization.md "When a plan lapses").
+  const r = await ready("planner.tab", "read");
   if (!("supabase" in r)) return null;
   return readPlan(r.supabase, listId);
 }

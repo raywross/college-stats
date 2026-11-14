@@ -218,29 +218,11 @@ export const ROADMAP: RoadmapSpec[] = [
   // after a revision against the data platform: clusters by cause, the Steward's run with fixed tools and a budget,
   // the Issues / Proposals / To do / Decisions / Audits screens and the college Review page. Phase C (the automated
   // code PR for a systemic proposal) is open; see the spec's "As built".
-  {
-    slug: "advisor",
-    file: "specs/product/advisor.md",
-    group: "business",
-    summary:
-      "The plan is Quad Advisor now, and a visitor sees exactly what they'd get before they sign up (both built); left: the 14-day free trial with your card on file and the yearly price after.",
-    complexity: 1,
-    complexityNote:
-      "The name, the redirects, and the page are built; what remains is the trial flow on Stripe Checkout with one reminder email, which lands with commercialization.",
-    status: "planned",
-  },
-  {
-    slug: "commercialization",
-    file: "specs/product/commercialization.md",
-    group: "business",
-    summary:
-      "The advisor: the plan as the one paid product, $20 a year for a student or $30 for a family, with everything else on the site free, including the counselor's portal.",
-    complexity: 3,
-    complexityNote:
-      "Stripe billing for two yearly products, webhooks, the entitlement map behind the planner's built capability hook, a pricing page, and the legal setup before launch.",
-    status: "planned",
-    after: ["advisor"],
-  },
+  // The advisor (specs/product/advisor.md, group "business") was built in full: the name and the splash page on
+  // 2026-10-27, the 14-day trial with the card up front on 2026-11-14. Commercialization (specs/product/
+  // commercialization.md) was built the same day on feature/billing: Stripe Checkout, the webhook, the subscriptions
+  // table, the entitlement map behind allowed(), the pricing page, and the admin switch; it stays inert until the owner
+  // connects a Stripe account and turns the price on (the spec's "Setup (owner)"). Both specs' "As built" say the rest.
   // Marketing (2026-11-09): the plan and the three things built for it, in build order.
   {
     slug: "marketing-plan",

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Code2, Download, KeyRound, ShieldCheck, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
+import { AdvisorSection } from "@/components/account/AdvisorSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { CounselorsSection } from "@/components/account/CounselorsSection";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
@@ -102,6 +103,8 @@ export default async function AccountPage() {
       >
         <HouseholdSummary households={households} />
       </AccountSection>
+
+      <AdvisorSection userId={user.id} />
 
       {guardians.length > 0 && (
         <AccountSection id="parents-can-edit" title="Parents can edit">

@@ -141,6 +141,18 @@ export const JOBS: readonly JobDef[] = [
     expects: { durationMs: [0, 5 * MIN], nonzero: ["sent"], nothingOkWhen: "No student with texts on has a hard deadline tomorrow.", restartable: true },
   },
   {
+    id: "subscriptions",
+    name: "Subscriptions reconcile",
+    description: "Fetches every live Quad Advisor subscription from Stripe and rewrites its row, so a missed webhook corrects itself; sends a trial-ending reminder the webhook missed.",
+    runner: "vercel",
+    path: "/api/cron/subscriptions",
+    schedules: [{ cron: "45 13 * * *" }],
+    gate: "Does nothing until Stripe is configured.",
+    spec: "specs/product/commercialization.md",
+    // Rewriting a row from Stripe's current state is idempotent; the reminder is sent once (reminder_sent_at).
+    expects: { durationMs: [0, 10 * MIN], nothingOkWhen: "No subscription exists yet.", restartable: true },
+  },
+  {
     id: "college-reported",
     name: "College-reported data",
     description: "Finds and reads each college's Common Data Set, class profile and announcements of its newest class, writes the values to the data store, and asks the publisher for a snapshot.",

@@ -41,6 +41,7 @@ export function PlanFrame({
   setup,
   back,
   people,
+  billing = null,
   essays = null,
   tabsRead = null,
 }: {
@@ -60,6 +61,8 @@ export function PlanFrame({
   back?: RecordBack;
   /** The plan's one top line (components/planner/PlanPeople.tsx), built by the page. */
   people?: ReactNode;
+  /** The one line about money (components/advisor/BillingLine.tsx): the trial's end, or the read-only banner. Null while the price isn't live. */
+  billing?: ReactNode;
   /** The Essays tab's read (lib/essays/tab-data.ts), made with the plan on every render (round 4: tabs switch in place). */
   essays?: EssaysTabData | null;
   /** What the panels read besides the plan, read with it (round 5, lib/planner/load.ts PlanTabsRead): the asks and the
@@ -92,9 +95,10 @@ export function PlanFrame({
   // plan, with "No numbers yet" on the people line. A parent or a counselor keeps the people line above it.
   if (ctx.viewer.canEdit && (setup || needsIntake)) {
     const intake = <PlanIntake ctx={ctx} view={view} mode={needsIntake ? "first" : "edit"} relation={relation} firstName={firstName} back={back} />;
-    return relation !== "self" && people ? (
+    return (relation !== "self" && people) || billing ? (
       <div className="space-y-6">
-        {people}
+        {billing}
+        {relation !== "self" ? people : null}
         {intake}
       </div>
     ) : (
@@ -120,6 +124,7 @@ export function PlanFrame({
     <PlanTabProvider tabs={tabs} opened={openTab} fallback={fallbackTab} local={local}>
       <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
         <div className="space-y-6">
+          {billing}
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">{people}</div>
             <div className="hidden shrink-0 lg:block">{pills}</div>

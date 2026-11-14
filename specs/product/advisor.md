@@ -1,7 +1,9 @@
 # The Advisor: The Plan's New Name, the Trial, and the Page That Sells It
 
-> Status: **planned** 2026-10-26; **parts 1 and 2 built 2026-10-27** on `feature/advisor` (see [As built](#as-built-2026-10-27-parts-1-and-2));
-> part 3, the trial, waits for the Stripe work in [commercialization.md](commercialization.md). From the owner's decisions of 2026-10-26: the plan is the one paid product
+> Status: **built**. Planned 2026-10-26; **parts 1 and 2 built 2026-10-27** on `feature/advisor` (see [As built](#as-built-2026-10-27-parts-1-and-2));
+> **part 3, the trial, built 2026-11-14** with the Stripe work in [commercialization.md](commercialization.md#as-built-2026-11-14)
+> (see [As built: part 3](#as-built-2026-11-14-part-3-the-trial)); it switches on when the owner connects a Stripe account and
+> turns the price on. From the owner's decisions of 2026-10-26: the plan is the one paid product
 > ([commercialization.md](commercialization.md)); "we should rename the 'plan' function, a play on a virtual advisor";
 > "14-day trial is what I'd do, collect the credit card, then actively cancel or the charge hits; annual only"; and "a
 > splashy page for when you click on it and don't have an account, something that will entice the user to sign up for a
@@ -196,6 +198,56 @@ daily-revalidated static page: `/advisor` reads the session first and this is it
 `tests/advisor-splash.test.mts` (10 tests) validates the fixture against the dataset and the catalog and renders every
 section with react-dom/server.
 
-**Not built, by design:** part 3 (the trial, Stripe, the reminder email, `/account`'s row, the lapsed read-only state),
+**Not built then, by design:** part 3 (the trial, Stripe, the reminder email, `/account`'s row, the lapsed read-only state),
 the 14-day and price wording that goes with it, and the "Ask a parent" path for students under 16 (nothing to ask for
-until the trial exists).
+until the trial exists). Built 2026-11-14, below.
+
+## As built (2026-11-14, part 3: the trial)
+Built on `feature/billing` with [commercialization.md](commercialization.md#as-built-2026-11-14), where the billing
+side (the table, the webhook, the entitlement hook, the pricing page, the admin switch, the owner's setup) is written
+up. What this spec's part 3 asked for, and where it landed:
+
+- **Nothing changes until the owner flips the switch.** Every piece below is live code, but the splash page keeps
+  "Start free" and "Free while Quad is in preview", the Advisor tab shows no line about money, and `allowed()` says yes
+  to everything until Stripe's four variables are set *and* the `advisor.price_live_at` setting is on
+  (`/admin/settings`, "Advisor price"). Accounts created before that moment keep the advisor free through 2027-08-31
+  ([open-doors.md](open-doors.md)).
+- **The button's path.** Once live, the splash page's buttons read "Start your 14-day free trial" with the price line
+  "$20 a year after, or $30 for the whole family. Cancel before the trial ends and pay nothing." (`components/advisor/
+  offer.ts`; the sections take an `offer`), and the sign-up comes back to **`/advisor/start`**, the upgrade sheet: the
+  two cards, the student a student plan covers (a select when a guardian has several), the family card for guardians,
+  and one button to Stripe Checkout (`app/advisor/start/`, `components/advisor/StartForm.tsx`, the rules in
+  `lib/billing-start.ts`). The splash's Questions gain the trial, card, cancel, family-price, and lapse answers
+  (`TRIAL_QUESTIONS`).
+- **Who can start one.** A guardian; a student 16 or older from their own account, confirming a parent's permission
+  under 18 with a checkbox the action requires; a student under 16 sees "Ask a parent to start your trial" with the
+  way to invite one from Household (the prefilled invitation that carries the parent straight to the splash page is
+  not built: the invitation flow is the household's own). A student with no birth year is sent to add it first
+  (`lib/billing.ts` `starterRule`).
+- **One trial per student.** Every subscription records the students its trial covered (`covered_student_ids`: the
+  one student, or the guardian's students at the family plan's start, grown but never shrunk); a student covered
+  before gets the plan with no trial (Checkout without `trial_period_days`, said plainly on the sheet).
+- **Checkout** as specified: `mode: subscription`, `trial_period_days: 14`, `payment_method_collection: "always"`,
+  `trial_settings.end_behavior.missing_payment_method: "cancel"`, Quad's sentence as the submit message, promotion
+  codes allowed, Stripe Tax when `STRIPE_AUTOMATIC_TAX=1` (`lib/stripe.ts` `createTrialCheckout`). The return
+  (`/advisor/start/return`) stores the session's subscription at once, so the tab is whole on the next page even
+  before the webhook lands, then opens `/advisor?trial=started` for the one-time welcome line.
+- **During the trial** the advisor is whole, with the quiet line "Trial ends Nov 28 · Manage" above the plan
+  (`components/advisor/BillingLine.tsx`, passed to `PlanFrame` as `billing`); Manage opens `/account#advisor`.
+- **Three days before the end** Stripe's `customer.subscription.trial_will_end` sends the one email
+  (`lib/emails/trial-ending.ts`: colleges on the list and moves done so far, the date, the amount, one button to keep
+  it, one link to cancel), recorded in `reminder_sent_at` so it goes once; the nightly reconcile sends it if the
+  webhook missed. No second reminder; the texts never carry billing.
+- **At the end** Stripe charges; a success changes nothing on the site. A cancelled or failed subscription turns the
+  plan read-only: the list, its levels, the calendar, and the offers stay (`planFor` reads with `mode: "read"`; the
+  map's `readWhenLapsed` rows), every write is refused with "That part of the advisor isn't available on your
+  account.", the Your-week emails and day-before texts skip the student (`entitledStudents` in both cron routes),
+  and a banner says so with the button to subscribe.
+- **Cancel** from `/account` ("Advisor, one student · trial ends Nov 28" with Cancel trial / Keep it, and the Stripe
+  Customer Portal for card, invoices, and receipts; `components/account/AdvisorSection.tsx`) and from the portal;
+  cancelling during the trial sets `cancel_at_period_end`, so it ends at day 14 and nothing is charged.
+- **Telemetry**: `trial_started {product, price_variant}`, `trial_reminder_sent`, `trial_converted`,
+  `trial_cancelled {day}`, `subscription_cancelled`, `subscription_renewed`, from the server, from the change in the
+  stored row ([telemetry.md](telemetry.md#event-registry)).
+- **Tests**: `tests/billing.test.mts` (the rules, the words, the email, the unconfigured path, the file guards);
+  `tests/advisor-splash.test.mts` still renders the preview offer unchanged.

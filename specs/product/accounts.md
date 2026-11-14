@@ -102,6 +102,58 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
 - The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)). Since 2026-11-08 the header's second item is the role item, Advisor / Household / Caseload by who is signed in ([role-nav.md](role-nav.md)).
 
+## Sign-up (redesigned 2026-11-14)
+Owner: "I'd like to collect more information when you create an account. like full name, address, what type of account
+it is (student/parent/counselor). Then if it's a student it should ask you what high school you're in (you should be
+allowed to skip high school). If you're a parent or counselor, you shouldn't need to ask for birth year. you'd really
+just need full name and email. maybe for parents you want an address." And, for students, the card as part of sign-up
+([commercialization.md](commercialization.md#as-built-2026-11-14)). Built on `feature/signup`.
+
+**The form** (`app/login/LoginForm.tsx` `SignUp`, one card, two steps in place):
+
+| Step | Asked |
+|---|---|
+| 1. Who are you? | Three cards: **A student** ("Your list, your record, your advisor."), **A parent or guardian** ("Your household, and every student's advisor in it."), **A counselor** ("Your caseload, free."). `?role=` preselects (a counselor's invitation link) |
+| 2. A student | Full name, email, password (the strength meter and rule as before), **birth year** (13 and older; under 13 refused as before), **high school** (the directory typeahead, `HighSchoolPicker`; optional) |
+| 2. A parent | Full name, email, password, **home address** (optional, with suggestions as you type when the provider is configured; a ZIP is enough) |
+| 2. A counselor | Full name, email, password |
+
+A line under the button points at the privacy page; the Terms join it when `/terms` exists. The server action
+(`signUpWithPassword`) checks every rule again: the name (2 to 80 characters), the email, the password, and the birth
+year only for a student (`signupNeedsBirthYear`). The name, role, and birth year go into the user's metadata for the
+sign-up trigger as before; the high school and the address ride under `signup` (`parseSignupMeta`) until the welcome
+step applies them.
+
+**The welcome step** (`/welcome`, `app/welcome/page.tsx`): the first signed-in page of a new account, reached from the
+confirmation link (`/auth/confirm?next=/welcome…`) or at once when email confirmation is off. Nothing to look at: it
+applies and redirects.
+- A student: their record is made (`currentStudent`, which starts the 14-day trial), the high school goes into their
+  profile (`basics.highSchool`, `basics.highSchoolId`) when the profile has none, and while the price is live and nothing
+  pays for them yet they go **straight to Stripe Checkout** to put the card on file, with the first charge at the
+  trial's end; then `/advisor`. The card is thus part of sign-up, not a surprise after the email link.
+- A parent: a household named after them (`householdNameFor`: "The Ross household", "Tracy's household") with the home
+  address they gave, then `/household`. A parent who gave no address gets no household yet: the household page makes one
+  the first time they add a person, as before.
+- A counselor: `/org`.
+- The `signup` metadata is cleared once applied (`auth.updateUser`), so a second visit only redirects. `?next=` wins over
+  the role's home when it names somewhere specific (an invitation, a join code).
+
+**Birth year for adults.** A parent's or counselor's profile has no birth year, and nothing asks for one: the account
+page's "add your birth year" line and the field's `required` are for students only. The 13-and-older rule still holds
+for every student.
+
+**Email confirmation.** Supabase's "Confirm email" setting decides whether the link step exists. With it on, the form
+says "Open it once to confirm your address; it signs you in and finishes setting up your account" and the link lands on
+`/welcome`. With it off (recommended once the sending domain is trusted: the owner found the link an interruption),
+sign-up signs in at once and a student is at Stripe within a second of "Create account". Either way the flow is the same
+code.
+
+**Still the old way:** the magic-link path (`Magic` in the form, `requestMagicLink`) asks an unknown email for a birth
+year and role as before; it is the secondary door and unchanged.
+
+**Tests:** `tests/signup.test.mts` (the rules, the household name, the metadata, the file guards); `tests/accounts.test.mts`
+counts `/welcome` among the routes that read the session, and `proxy.ts` refreshes it there.
+
 ## Roles and households
 ```
 auth.users ──1:1── profiles (display_name, birth_year, role_hint: student | guardian | counselor, created)

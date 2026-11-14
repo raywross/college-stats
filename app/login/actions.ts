@@ -8,7 +8,7 @@ import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { passwordProblems } from "@/lib/password";
 import { writeMeHintAfterSignIn } from "@/lib/me-hint-server";
 import { trackServer } from "@/lib/analytics-server";
-import { AGE_GATE_COOKIE, birthYearAllowed, firstLanding, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
+import { AGE_GATE_COOKIE, birthYearAllowed, isRoleHint, parseBirthYear, safeNextPath, signupNeedsBirthYear, WELCOME_PATH } from "@/lib/accounts";
 
 export type LoginState =
   | { status: "idle" }
@@ -148,9 +148,13 @@ export async function signInWithPassword(_prev: PasswordState, form: FormData): 
 }
 
 /**
- * Creates an account with a password (checked against lib/password.ts here as well as in the form), the birth year
- * and role going into user metadata for the sign-up trigger as with magic links. Sent with the implicit-flow client,
- * so the confirmation email's link works in any browser and lands on /auth/confirm.
+ * Creates an account with a password (checked against lib/password.ts here as well as in the form). Redesigned
+ * 2026-11-14 (specs/product/accounts.md "Sign-up"): who you are decides what is asked. Everyone: full name, email,
+ * password. A student: a birth year (the 13-and-older rule) and, optionally, their high school. A parent: optionally
+ * the home address. A counselor: nothing more. The name, role, and birth year go into user metadata for the sign-up
+ * trigger; the high school and address ride along under `signup` until /welcome applies them. Sent with the
+ * implicit-flow client, so the confirmation email's link works in any browser and lands on /auth/confirm, which goes on
+ * to /welcome; with confirmation off, straight to /welcome (and, for a student, on to the card).
  */
 export async function signUpWithPassword(_prev: PasswordState, form: FormData): Promise<PasswordState> {
   if (!authConfigured()) return { status: "error", message: "Sign-in isn't available here." };
@@ -159,23 +163,43 @@ export async function signUpWithPassword(_prev: PasswordState, form: FormData): 
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
   const next = safeNextPath(form.get("next"), "/account");
+  const roleInput = form.get("role_hint");
+  const role = isRoleHint(roleInput) ? roleInput : "student";
+  const name = String(form.get("display_name") ?? "").trim().replace(/\s+/g, " ");
+  if (name.length < 2 || name.length > 80) return { status: "error", message: "Enter your full name.", email };
   if (!EMAIL_RE.test(email) || email.length > 254) return { status: "error", message: "Enter a valid email address.", email };
   const problems = passwordProblems(password, email);
   if (problems.length) return { status: "error", message: problems.join(" "), email };
-  const year = parseBirthYear(String(form.get("birth_year") ?? ""));
-  if (year === null || year > new Date().getFullYear()) return { status: "error", message: "Enter your birth year as four digits, like 2008.", email };
-  if (!birthYearAllowed(year)) {
-    store.set(AGE_GATE_COOKIE, "refused", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24, path: "/" });
-    return { status: "refused" };
+  let year: number | null = null;
+  if (signupNeedsBirthYear(role)) {
+    year = parseBirthYear(String(form.get("birth_year") ?? ""));
+    if (year === null || year > new Date().getFullYear()) return { status: "error", message: "Enter your birth year as four digits, like 2008.", email };
+    if (!birthYearAllowed(year)) {
+      store.set(AGE_GATE_COOKIE, "refused", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24, path: "/" });
+      return { status: "refused" };
+    }
   }
-  const role = form.get("role_hint");
+  const text = (key: string, max: number) => String(form.get(key) ?? "").trim().slice(0, max) || null;
+  const signup: Record<string, string> = {};
+  if (role === "student") {
+    const hsId = text("high_school_id", 40);
+    const hsName = text("high_school_name", 200);
+    if (hsId) signup.high_school_id = hsId;
+    if (hsName) signup.high_school_name = hsName;
+  }
+  if (role === "guardian") {
+    const address = text("home_address", 200);
+    if (address) signup.home_address = address;
+  }
+  // The welcome step applies what was collected, then goes on to where the person was headed (or the role's home).
+  const welcome = `${WELCOME_PATH}?next=${encodeURIComponent(next)}`;
 
   const { data, error } = await magicLinkClient().auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${await originOf()}/auth/confirm?next=${encodeURIComponent(next)}`,
-      data: { birth_year: String(year), ...(isRoleHint(role) ? { role_hint: role } : {}) },
+      emailRedirectTo: `${await originOf()}/auth/confirm?next=${encodeURIComponent(welcome)}`,
+      data: { display_name: name, role_hint: role, ...(year !== null ? { birth_year: String(year) } : {}), ...(Object.keys(signup).length ? { signup } : {}) },
     },
   });
   if (error) {
@@ -190,15 +214,15 @@ export async function signUpWithPassword(_prev: PasswordState, form: FormData): 
   // Counts the sign-up, not the person: no email, birth year, or next path (specs/product/telemetry.md).
   await trackServer("signup_started", {
     method: "password",
-    role_hint: isRoleHint(role) ? role : "none",
+    role_hint: role,
     has_invite: next.startsWith("/invite"),
   });
   if (data.session) {
-    // Email confirmation is off on this project: sign straight in.
+    // Email confirmation is off on this project: sign straight in and finish setting up.
     const supabase = await createServerSupabase();
     await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
     await writeMeHintAfterSignIn(supabase, data.session.user);
-    redirect(firstLanding(next, role, true));
+    redirect(welcome);
   }
   return { status: "confirm-email", email };
 }

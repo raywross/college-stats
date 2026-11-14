@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Eye, EyeOff, MailCheck } from "lucide-react";
 import { Term } from "@/components/ui/info-tip";
+import { AddressField } from "@/components/account/AddressField";
+import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 import { ROLE_HINTS, type RoleHint } from "@/lib/accounts";
 import { SITE_NAME } from "@/lib/brand";
 import { PASSWORD_MIN, passwordProblems, passwordStrength } from "@/lib/password";
@@ -36,6 +38,7 @@ export function LoginForm({
   initialError,
   initialMode = "signin",
   initialRole = "student",
+  addressSuggestions = false,
 }: {
   next: string;
   refused: boolean;
@@ -44,13 +47,15 @@ export function LoginForm({
   initialMode?: "signin" | "signup";
   /** `?role=` picks "I'm" for a new account (a counselor's invitation link sends `counselor`); a student by default. */
   initialRole?: RoleHint;
+  /** Whether the address provider is configured (the page knows), for a parent's home address field. */
+  addressSuggestions?: boolean;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
 
   if (refused) return <Refused />;
   const switchTo = (m: Mode) => () => setMode(m);
-  const props = { next, email, setEmail, switchTo, role: initialRole };
+  const props = { next, email, setEmail, switchTo, role: initialRole, addressSuggestions };
   return (
     <div className="rounded-3xl border bg-card p-5 sm:p-8">
       {/* Other sign-in methods (Google) go here, above the forms, when they're turned on. */}
@@ -62,7 +67,7 @@ export function LoginForm({
   );
 }
 
-type ModeProps = { next: string; email: string; setEmail: (e: string) => void; switchTo: (m: Mode) => () => void; role?: RoleHint };
+type ModeProps = { next: string; email: string; setEmail: (e: string) => void; switchTo: (m: Mode) => () => void; role?: RoleHint; addressSuggestions?: boolean };
 
 function EmailField({ email, setEmail, autoFocus }: { email: string; setEmail: (e: string) => void; autoFocus?: boolean }) {
   return (
@@ -227,62 +232,128 @@ function StrengthMeter({ password, email }: { password: string; email: string })
   );
 }
 
-function SignUp({ next, email, setEmail, switchTo, role = "student" }: ModeProps) {
+/** The three kinds of account, as the first question (accounts.md "Sign-up", 2026-11-14). */
+const ROLE_CARDS: { value: RoleHint; title: string; line: string }[] = [
+  { value: "student", title: "A student", line: "Your list, your record, your advisor." },
+  { value: "guardian", title: "A parent or guardian", line: "Your household, and every student's advisor in it." },
+  { value: "counselor", title: "A counselor", line: "Your caseload, free." },
+];
+
+/**
+ * Create an account (accounts.md "Sign-up", redesigned 2026-11-14): who you are first, then only what that needs.
+ * Everyone: full name, email, a strong password. A student: birth year (13 and older), and the high school, skippable.
+ * A parent: the home address, optional. A counselor: nothing more. The server action checks every rule again, and
+ * /welcome applies the high school or the address and, for a student, asks for the card.
+ */
+function SignUp({ next, email, setEmail, switchTo, role: initialRole = "student", addressSuggestions = false }: ModeProps) {
   const [state, action, pending] = useActionState<PasswordState, FormData>(signUpWithPassword, { status: "idle" });
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<RoleHint>(initialRole);
+  const [chosen, setChosen] = useState(false);
+  const [address, setAddress] = useState("");
   if (state.status === "refused") return <Refused />;
   if (state.status === "confirm-email")
     return (
       <Sent title="Confirm your email">
         We sent a link to <strong className="break-all text-foreground">{state.email}</strong>. Open it once to confirm your address;
-        after that, sign in with your email and password.
+        it signs you in and finishes setting up your account.
       </Sent>
     );
   const ok = passwordProblems(password, email).length === 0;
+  const roleWord = ROLE_CARDS.find((r) => r.value === role)?.title.toLowerCase() ?? "a student";
+
+  if (!chosen) {
+    return (
+      <div>
+        <h2 className="mb-1 font-display text-xl font-bold">Create an account</h2>
+        <p className="mb-4 text-sm text-muted-foreground">Who are you? It decides what we ask next.</p>
+        <div className="grid gap-2">
+          {ROLE_CARDS.map((r) => (
+            <button
+              key={r.value}
+              type="button"
+              onClick={() => {
+                setRole(r.value);
+                setChosen(true);
+              }}
+              className={cn("rounded-2xl border px-4 py-3 text-left transition hover:bg-muted/40", role === r.value && "border-primary")}
+            >
+              <span className="block font-semibold">{r.title}</span>
+              <span className="block text-sm text-muted-foreground">{r.line}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-sm">
+          Have an account?{" "}
+          <button type="button" onClick={switchTo("signin")} className={linkBtn}>
+            Sign in
+          </button>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <form action={action}>
       <input type="hidden" name="next" value={next} />
-      <h2 className="mb-4 font-display text-xl font-bold">Create an account</h2>
-      <EmailField email={email} setEmail={setEmail} autoFocus />
+      <input type="hidden" name="role_hint" value={role} />
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-xl font-bold">Create an account</h2>
+        <button type="button" onClick={() => setChosen(false)} className="text-xs font-semibold text-primary hover:underline">
+          I&apos;m {roleWord} · change
+        </button>
+      </div>
+      <label className="block text-sm font-semibold" htmlFor="signup-name">
+        Full name
+      </label>
+      <input id="signup-name" name="display_name" required minLength={2} maxLength={80} autoComplete="name" autoFocus className={`${inputCls} mt-1.5`} placeholder="First and last" />
+      <div className="mt-4">
+        <EmailField email={email} setEmail={setEmail} />
+      </div>
       <label className="mt-4 block text-sm font-semibold" htmlFor="signup-password">
         Password
       </label>
       <PasswordField id="signup-password" autoComplete="new-password" value={password} onChange={setPassword} />
       <StrengthMeter password={password} email={email} />
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-semibold" htmlFor="signup-birth-year">
-            Birth year
-          </label>
-          <input
-            id="signup-birth-year"
-            name="birth_year"
-            inputMode="numeric"
-            pattern="[0-9]{4}"
-            maxLength={4}
-            required
-            autoComplete="bday-year"
-            className={`${inputCls} mt-1.5`}
-            placeholder="YYYY"
-          />
+      {role === "student" && (
+        <div className="mt-4 grid gap-4 sm:grid-cols-[8rem_1fr]">
+          <div>
+            <label className="block text-sm font-semibold" htmlFor="signup-birth-year">
+              Birth year
+            </label>
+            <input id="signup-birth-year" name="birth_year" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} required autoComplete="bday-year" className={`${inputCls} mt-1.5`} placeholder="YYYY" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold" htmlFor="signup-high-school">
+              High school <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <div className="mt-1.5">
+              <HighSchoolPicker idName="high_school_id" nameName="high_school_name" defaultId={null} defaultName={null} />
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-semibold" htmlFor="signup-role">
-            I&apos;m
+      )}
+      {role === "guardian" && (
+        <div className="mt-4">
+          <label className="block text-sm font-semibold" htmlFor="signup-address">
+            Home address <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
-          <select id="signup-role" name="role_hint" defaultValue={role} className={`${inputCls} mt-1.5`}>
-            {ROLE_HINTS.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+          <input type="hidden" name="home_address" value={address} />
+          <AddressField id="signup-address" value={address} onChange={setAddress} enabled={addressSuggestions} placeholder="Street, city, state, or just a ZIP" className="mt-1.5" />
+          <p className="mt-1 text-xs text-muted-foreground">For distances to colleges and visits near you. A ZIP code is enough.</p>
         </div>
-      </div>
+      )}
       {state.status === "error" && <ErrorLine message={state.message} />}
       <button type="submit" disabled={pending || !ok} className={primaryBtn}>
         {pending ? "Creating…" : "Create account"}
       </button>
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        By creating an account you agree to how Quad handles your data, on the{" "}
+        <Link href="/privacy" className="font-semibold text-primary hover:underline">
+          privacy page
+        </Link>
+        .
+      </p>
       <p className="mt-4 text-center text-sm">
         Have an account?{" "}
         <button type="button" onClick={switchTo("signin")} className={linkBtn}>

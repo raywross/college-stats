@@ -38,7 +38,7 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
           inputMode="numeric"
           pattern="[0-9]{4}"
           maxLength={4}
-          required={profile.birth_year === null}
+          required={profile.birth_year === null && profile.role_hint === "student"}
           autoComplete="bday-year"
           className={`${inputCls} mt-1.5`}
           placeholder="YYYY"

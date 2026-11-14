@@ -131,6 +131,45 @@ export function birthYearAllowed(year: number, today: Date = new Date()): boolea
 /** Cookie remembering an under-13 refusal for a day, so the age question can't simply be retried with another year. */
 export const AGE_GATE_COOKIE = "quad_age_gate";
 
+/* ------------------------------------------------------------------ */
+/* Sign-up (redesigned 2026-11-14; accounts.md "Sign-up")              */
+/* ------------------------------------------------------------------ */
+
+/** Where a new account lands first: the step that applies what sign-up collected and, for a student, asks for the card. */
+export const WELCOME_PATH = "/welcome";
+
+/** Only a student is asked for a birth year (the 13-and-older rule); a parent or counselor is an adult by their role. */
+export function signupNeedsBirthYear(role: RoleHint): boolean {
+  return role === "student";
+}
+
+/**
+ * What sign-up collects beyond the profile's own columns, carried in the user's metadata under `signup` until the
+ * welcome step applies it (a student's high school into their profile, a parent's home address into a new household)
+ * and clears it. Each field is optional: both are skippable on the form.
+ */
+export interface SignupMeta {
+  highSchoolId: string | null;
+  highSchoolName: string | null;
+  homeAddress: string | null;
+}
+
+export function parseSignupMeta(raw: unknown): SignupMeta | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const str = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+  const meta: SignupMeta = { highSchoolId: str(o.high_school_id, 40), highSchoolName: str(o.high_school_name, 200), homeAddress: str(o.home_address, 200) };
+  return meta.highSchoolId || meta.highSchoolName || meta.homeAddress ? meta : null;
+}
+
+/** The household a parent's sign-up makes: "The Ross household" from a last name, else "Tracy's household", else "Our household". */
+export function householdNameFor(displayName: string | null): string {
+  const parts = (displayName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `The ${parts[parts.length - 1]} household`.slice(0, 80);
+  if (parts.length === 1) return `${parts[0]}'s household`.slice(0, 80);
+  return "Our household";
+}
+
 /** A four-digit birth year from form input, or null when it isn't one. */
 export function parseBirthYear(input: unknown): number | null {
   if (typeof input !== "string" && typeof input !== "number") return null;

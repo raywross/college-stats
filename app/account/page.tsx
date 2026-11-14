@@ -70,7 +70,7 @@ export default async function AccountPage() {
         <SignOutButton className="h-10 rounded-full border px-4 text-sm font-semibold hover:bg-muted" />
       </header>
 
-      {profile.birth_year === null && (
+      {profile.birth_year === null && profile.role_hint === "student" && (
         <p className="rounded-2xl border border-pop bg-pop/15 px-4 py-3 text-sm" role="status">
           Add your birth year below to finish setting up your account.
         </p>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Check, Circle } from "lucide-react";
 import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { HouseholdActionButton } from "@/components/account/HouseholdActionButton";
-import { CustomAskForm, NoteForm } from "@/components/org/StudentForms";
+import { CustomAskForm, InviteParentForm, NoteForm } from "@/components/org/StudentForms";
 import { Term } from "@/components/ui/info-tip";
 import { askStudent, deleteOrgNote } from "@/app/org/actions";
 import { ORG_ASKS_PER_WEEK, type OrgAsk, type OrgNote } from "@/lib/org-rules";
@@ -161,6 +161,13 @@ export function StudentView({
               Essays{student.essays.length > 0 ? ` (${student.essays.length})` : ""}
             </Link>
           </div>
+        </section>
+
+        <section className={panel} aria-labelledby="family-heading">
+          <h2 id="family-heading" className="font-display text-lg font-bold">
+            Family
+          </h2>
+          <InviteParentForm studentId={row.studentId} firstName={first} />
         </section>
 
         <section className={panel} aria-labelledby="notes-heading">

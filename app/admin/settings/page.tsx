@@ -68,7 +68,7 @@ export default async function SettingsPage() {
         >
           <div className="space-y-3 text-sm">
             <p className="max-w-3xl text-muted-foreground">
-              Unset, Quad Advisor is free for every account and nothing is sold. Set, new accounts start the 14-day trial with a card on file,
+              Unset, Quad Advisor is free for every account and nothing is sold. Set, every new student starts a 14-day trial with no card,
               accounts made before the moment keep the advisor free through the end of the cycle, and a subscription that lapses turns the advisor read-only.
               Needs Stripe&apos;s keys and price ids on this deployment{stripeOn ? " (set)" : " (not set here: with the setting on, the site still gates nothing until they are)"}.
             </p>

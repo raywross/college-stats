@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import type Stripe from "stripe";
-import { applySubscription, billingService, sendTrialReminder, siteOrigin } from "@/lib/billing-server";
+import { applySubscription, billingService, saveCardFromSession, sendTrialReminder, siteOrigin } from "@/lib/billing-server";
 import { billingConfigured, fetchSubscription, webhookEvent } from "@/lib/stripe";
 import type { SubscriptionRow } from "@/lib/billing";
 
@@ -10,8 +10,9 @@ import type { SubscriptionRow } from "@/lib/billing";
  * shouldn't. Each event id is recorded in `stripe_events` first, so a retry of one already handled does nothing.
  *
  * Handled:
- * - `checkout.session.completed`: the subscription the session made is fetched and stored (the return page does the
- *   same, so whichever lands first writes the row and the other finds it there).
+ * - `checkout.session.completed`: a subscription session's subscription is fetched and stored (the return route does
+ *   the same, so whichever lands first writes the row and the other finds it there); a setup session's card is
+ *   recorded as the household's card on file.
  * - `customer.subscription.created|updated|deleted`: the row is written from the event's object; the change's events
  *   (trial started, converted, cancelled; a year cancelled or renewed) go to telemetry.
  * - `customer.subscription.trial_will_end`: three days before the end, the one reminder email, once.
@@ -49,6 +50,10 @@ async function handle(service: ReturnType<typeof billingService>, event: Stripe.
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
+      if (session.mode === "setup") {
+        const saved = await saveCardFromSession(service, session.id);
+        return { setup: session.id, saved };
+      }
       const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
       if (!subId) return { ignored: "no subscription" };
       const result = await applySubscription(service, await fetchSubscription(subId));

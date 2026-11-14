@@ -215,6 +215,17 @@ both gets the same words. Never a GPA or score: the office collects those from t
   grant they made.
 - **The advisor** shows asks as notices; nothing else changes for the student.
 
+## Inviting a parent (2026-11-14)
+Owner: "A counselor should be able to invite a parent to create a household." On a student's page (`/org/students/[id]`)
+a **Family** panel has "Invite a parent": the parent's name and email. The database (`org_invite_guardian`,
+`20261114130000_billing_per_student.sql`) checks the student is on the counselor's caseload, uses the student's active
+household or makes one named after them ("Jordan's household") with the student in it, and writes the ordinary guardian
+invitation (edit access on, the counselor as `invited_by`). The link is emailed when email is set up and always shown to
+copy, like the household's own; accepting it is the household's ordinary acceptance, so the parent sees the same
+advisor the student does and can pay for it ([commercialization.md](commercialization.md#as-built-2026-11-14)). The
+counselor is never a member of the household and never sees it. Refusals come back in plain words: not on the caseload,
+already a guardian, the counselor's own email.
+
 ## The channel
 What the site does to turn a caseload into families who buy the advisor, and what it refuses to do:
 - **The free line, everywhere a counselor looks:** on `/org` before the organization exists, on the pricing page

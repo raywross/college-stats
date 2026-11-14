@@ -4,9 +4,10 @@ import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
+import { safeNextPath } from "@/lib/accounts";
 import { applySubscription, billingService } from "@/lib/billing-server";
 import { requestOrigin } from "@/lib/household-hub";
-import { billingConfigured, createPortalSession, setCancelAtPeriodEnd } from "@/lib/stripe";
+import { billingConfigured, createCardSetupCheckout, createPortalSession, ensureCustomer, setCancelAtPeriodEnd } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase-server";
 import type { SubscriptionRow } from "@/lib/billing";
 
@@ -21,7 +22,7 @@ async function ownRow(id: string): Promise<{ user: { id: string }; row: Subscrip
   return data ? { user, row: data as SubscriptionRow } : null;
 }
 
-/** Open Stripe's Customer Portal (cancel, card, invoices) for the signed-in buyer, back to /account after. */
+/** Open Stripe's Customer Portal (cancel, card, invoices) for the signed-in payer, back to /account after. */
 export async function openBillingPortal(): Promise<void> {
   const user = await getUser();
   if (!user || !billingConfigured()) redirect("/account");
@@ -34,8 +35,31 @@ export async function openBillingPortal(): Promise<void> {
 }
 
 /**
- * Cancel at the period's end (specs/product/advisor.md "Cancel": during the trial it ends at day 14, not at once, so
- * the family keeps what it started), or take the cancellation back. The row is rewritten from Stripe's answer.
+ * Save the household's card (commercialization.md "Billing": a parent enters billing once for the household): Stripe
+ * Checkout in setup mode, nothing charged, back to `next` (a same-origin path) through the return route that records it.
+ */
+export async function startCardSetup(form: FormData): Promise<void> {
+  const next = safeNextPath(form.get("next"), "/account#advisor");
+  const { getAccount } = await import("@/lib/auth");
+  const account = await getAccount();
+  if (!account || !billingConfigured()) redirect("/account");
+  const service = billingService();
+  const customerId = await ensureCustomer(service, account.user);
+  const origin = requestOrigin(await headers());
+  redirect(
+    await createCardSetupCheckout({
+      customerId,
+      userId: account.user.id,
+      origin,
+      successPath: `/account/billing/card/return?session_id={CHECKOUT_SESSION_ID}&next=${encodeURIComponent(next)}`,
+      cancelPath: `/account/billing/card?cancelled=1&next=${encodeURIComponent(next)}`,
+    }),
+  );
+}
+
+/**
+ * Cancel at the period's end (specs/product/advisor.md "Cancel": during the trial it ends at the trial's end, not at
+ * once, so the family keeps what it started), or take the cancellation back. The row is rewritten from Stripe's answer.
  */
 export async function setCancel(_prev: BillingActionState, form: FormData): Promise<BillingActionState> {
   const id = String(form.get("subscription") ?? "");
@@ -50,5 +74,5 @@ export async function setCancel(_prev: BillingActionState, form: FormData): Prom
     return { status: "error", message: "We couldn't change that. Try again in a moment, or manage it from the billing portal." };
   }
   refresh();
-  return { status: "done", message: cancel ? (own.row.status === "trialing" ? "Cancelled. Your trial runs to its end and nothing is charged." : "Cancelled. The advisor stays whole until the year ends, then turns read-only.") : "Kept. The advisor carries on." };
+  return { status: "done", message: cancel ? (own.row.status === "trialing" ? "Cancelled. The trial runs to its end and nothing is charged." : "Cancelled. The advisor stays whole until the year ends, then turns read-only.") : "Kept. The advisor carries on." };
 }

@@ -10,6 +10,28 @@ import { sendEmail } from "@/lib/email";
 import { SITE_NAME } from "@/lib/brand";
 import { EMAIL_RE, HOUSEHOLD_ERRORS, errorMessage, invitationEmail, shortDate } from "@/lib/household-rules";
 import { invitationLink, isUuid, parseAddPerson, requestOrigin } from "@/lib/household-hub";
+import { billingService, cardOnFile, studentPaidFor, subscribeWithCard } from "@/lib/billing-server";
+import { priceLive } from "@/lib/entitlements";
+
+/** `/account/billing/card?next=…`: where a parent with no card on file goes before adding a student (commercialization.md "Billing"). A "use server" file exports only actions, so this stays local. */
+const ADD_CARD_PATH = "/account/billing/card";
+
+/**
+ * A parent pays for each student they add (owner, 2026-11-14): once the price is live, adding a student needs the
+ * household's card on file, and the student gets a subscription on the parent's customer, trialing until the
+ * student's trial ends. Nothing while the price isn't live. A failure to subscribe is logged, never shown as a failure
+ * to add the student: the student exists, and the parent can pay from the student's advisor.
+ */
+async function payForStudent(payer: { id: string; email: string | null }, studentId: string): Promise<void> {
+  try {
+    const service = billingService();
+    if (await studentPaidFor(service, studentId)) return;
+    const row = await subscribeWithCard(service, payer, studentId);
+    if (!row) console.warn(`household: no card on file for ${payer.id}; ${studentId} added without a subscription.`);
+  } catch (err) {
+    console.error(`household: paying for student ${studentId} failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
 
 /**
  * Household Server Actions (specs/product/household-hub.md; specs/product/accounts.md "Built: households"). Each one
@@ -58,13 +80,14 @@ type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
  * domain exists, and the on-screen link covers it). The email says "choose a password": opening the link signs a new
  * person in through the invite Edge Function; someone who already has an account is asked to sign in instead.
  */
-async function deliverInvitation(
+export async function deliverInvitation(
   supabase: Supabase,
-  inv: { household: string; name: string; email: string; side: "guardian" | "student"; token: string; expiresAt: string; inviter: string | null },
+  inv: { household: string; name: string; email: string; side: "guardian" | "student"; token: string; expiresAt: string; inviter: string | null; householdName?: string | null },
 ): Promise<AddPersonState> {
   const link = invitationLink(requestOrigin(await headers()), inv.token);
   const expires = shortDate(inv.expiresAt);
-  const { data: hh } = await supabase.from("households").select("name").eq("id", inv.household).maybeSingle();
+  // A counselor's invitation (app/org/actions.ts inviteGuardian) passes the name: they can't read the household's row.
+  const { data: hh } = inv.householdName ? { data: { name: inv.householdName } } : await supabase.from("households").select("name").eq("id", inv.household).maybeSingle();
   const message = invitationEmail({
     inviter: inv.inviter,
     household: (hh as { name: string } | null)?.name ?? "your family's",
@@ -92,6 +115,12 @@ export async function addPerson(_prev: AddPersonState, form: FormData): Promise<
   const input = parsed.value;
   const supabase = await createServerSupabase();
 
+  // Once the price is live, a parent adding a student needs the household's card on file first; back here after.
+  const charging = input.role === "student" && (await priceLive());
+  if (charging && !(await cardOnFile(await createServerSupabase(), account.user.id))) {
+    redirect(`${ADD_CARD_PATH}?next=${encodeURIComponent("/household")}`);
+  }
+
   let household = input.household;
   if (!household) {
     const created = await supabase.rpc("create_household", { p_name: input.householdName, p_role: input.myRole });
@@ -115,6 +144,12 @@ export async function addPerson(_prev: AddPersonState, form: FormData): Promise<
       return failed(error, "create_invitation");
     }
     const inv = data as { id: string; token: string; expires_at: string };
+    if (charging) {
+      // The eight-argument form made the managed record; the invitation row names it.
+      const { data: row } = await supabase.from("invitations").select("student_id").eq("id", inv.id).maybeSingle();
+      const studentId = (row as { student_id: string | null } | null)?.student_id;
+      if (studentId) await payForStudent(account.user, studentId);
+    }
     const delivered = await deliverInvitation(supabase, {
       household,
       name: input.displayName,
@@ -138,6 +173,7 @@ export async function addPerson(_prev: AddPersonState, form: FormData): Promise<
     const phone = await supabase.from("students").update({ phone: input.phone }).eq("id", studentId as string);
     if (phone.error) console.error(`household: saving a managed student's phone failed: ${phone.error.message}`);
   }
+  if (charging) await payForStudent(account.user, studentId as string);
   refresh();
   return { status: "added", name: input.displayName };
 }

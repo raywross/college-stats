@@ -1,24 +1,25 @@
 import "server-only";
 /**
- * Stripe, behind one seam (specs/product/commercialization.md "Billing"; specs/product/advisor.md "2. The trial"):
- * Checkout for the 14-day trial with the card up front, the Customer Portal for cancel, card, and invoices, the
- * webhook's signature check, and the one function that copies a Stripe subscription into `subscriptions`
- * (`syncSubscription`), shared by the webhook, the checkout's return page, and the nightly reconcile so every path
- * writes the same row. No card data ever touches the app: the browser goes to Stripe's hosted pages and comes back.
+ * Stripe, behind one seam (specs/product/commercialization.md "Billing"): Checkout for a student's subscription (the
+ * card collected, the year starting when the trial ends), Checkout in setup mode for a parent's card on file, the
+ * server-made subscription charged against that card when a parent adds a student, the Customer Portal for cancel,
+ * card, and invoices, the webhook's signature check, and the one function that copies a Stripe subscription into
+ * `subscriptions` (`syncSubscription`), shared by the webhook, the return pages, and the nightly reconcile so every
+ * path writes the same row. No card data ever touches the app: the browser goes to Stripe's hosted pages and comes back.
  *
- * Env (`.env.example`): STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ADVISOR_STUDENT, STRIPE_PRICE_ADVISOR_FAMILY;
- * STRIPE_AUTOMATIC_TAX=1 once Stripe Tax is registered. Without the first four, `billingConfigured()` is false and
- * nothing on the site is gated or sold (lib/entitlements.ts).
+ * Env (`.env.example`): STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ADVISOR_STUDENT; STRIPE_AUTOMATIC_TAX=1
+ * once Stripe Tax is registered. Without the first three, `billingConfigured()` is false and nothing on the site is
+ * gated or sold (lib/entitlements.ts).
  */
 import Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isProduct, isSubscriptionStatus, LIST_VARIANT, priceFor, TRIAL_DAYS, type Product, type SubscriptionRow } from "./billing.ts";
+import { isProduct, isSubscriptionStatus, LIST_VARIANT, priceFor, stripeTrialEnd, type Product, type SubscriptionRow } from "./billing.ts";
 
 export type BillingEnv = Record<string, string | undefined>;
 
-/** The four variables billing needs; the price ids are what the checkout sells. */
+/** The three variables billing needs; the price id is what the checkout sells. */
 export function billingConfigured(env: BillingEnv = process.env): boolean {
-  return Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_ADVISOR_STUDENT && env.STRIPE_PRICE_ADVISOR_FAMILY);
+  return Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_ADVISOR_STUDENT);
 }
 
 let client: Stripe | null = null;
@@ -31,21 +32,22 @@ export function stripe(): Stripe {
   return client;
 }
 
-/** The Stripe Price for a product (the list price; a price test's variants add their own ids later). */
-export function priceIdFor(product: Product, variant: string = LIST_VARIANT, env: BillingEnv = process.env): string {
+/** The Stripe Price for the product (the list price; a price test's variants add their own ids later). */
+export function priceIdFor(product: Product = "student", variant: string = LIST_VARIANT, env: BillingEnv = process.env): string {
+  void product;
   void variant; // Only the list price has a Stripe Price today (lib/billing.ts PRICE_VARIANTS).
-  const id = product === "student" ? env.STRIPE_PRICE_ADVISOR_STUDENT : env.STRIPE_PRICE_ADVISOR_FAMILY;
-  if (!id) throw new Error(`Stripe isn't configured: no price id for the ${product} product.`);
+  const id = env.STRIPE_PRICE_ADVISOR_STUDENT;
+  if (!id) throw new Error("Stripe isn't configured: no price id for the student product.");
   return id;
 }
 
 /** The product a Stripe Price id sells, by the env; null for a price Quad doesn't know. */
 export function productForPrice(priceId: string | null | undefined, env: BillingEnv = process.env): Product | null {
   if (!priceId) return null;
-  if (priceId === env.STRIPE_PRICE_ADVISOR_STUDENT) return "student";
-  if (priceId === env.STRIPE_PRICE_ADVISOR_FAMILY) return "family";
-  return null;
+  return priceId === env.STRIPE_PRICE_ADVISOR_STUDENT ? "student" : null;
 }
+
+const automaticTax = () => process.env.STRIPE_AUTOMATIC_TAX === "1";
 
 /* ------------------------------------------------------------------ */
 /* Customers                                                           */
@@ -72,18 +74,22 @@ export async function ensureCustomer(service: SupabaseClient, user: { id: string
 }
 
 /* ------------------------------------------------------------------ */
-/* Checkout and the portal                                             */
+/* Checkout, setup, and the portal                                     */
 /* ------------------------------------------------------------------ */
 
-export interface CheckoutInput {
+/** What every subscription carries in its metadata, for the webhook to read back (session events don't carry it). */
+export function subscriptionMetadata(input: { userId: string; studentId: string; priceVariant?: string }): Record<string, string> {
+  return { user_id: input.userId, product: "student", student_id: input.studentId, covered_student_ids: input.studentId, price_variant: priceFor("student", input.priceVariant).variant };
+}
+
+export interface SubscriptionCheckoutInput {
   customerId: string;
+  /** The payer. */
   user: { id: string };
-  product: Product;
-  /** A student plan: the student it covers. A family plan: the guardian's students at the start, for the trial record. */
-  studentId: string | null;
-  coveredStudentIds: string[];
-  /** False when every covered student has had a trial before (one trial per student): the year starts at once. */
-  trial: boolean;
+  /** The student the subscription pays for. */
+  studentId: string;
+  /** The student's trial end (lib/billing.ts TrialRow); the charge waits for it when it is far enough ahead. */
+  trialEnd: string | null;
   priceVariant?: string;
   /** Quad's sentence above Stripe's button (lib/billing.ts checkoutSentence). */
   sentence: string;
@@ -95,39 +101,94 @@ export interface CheckoutInput {
 }
 
 /**
- * A hosted Checkout session for the trial (advisor.md "2. The trial"): `mode: subscription`, 14 days free, the card
- * collected up front, and a trial that ends without a card ends with a cancel, never a charge. The metadata on the
- * subscription (not only the session) is what the webhook reads, since subscription events carry it and session
- * events don't. Returns the URL to send the browser to.
+ * A hosted Checkout session for one student's subscription: `mode: subscription`, the card collected now, the first
+ * charge at the student's trial end (Stripe's `trial_end`) when that is at least two days away, else today. A trial
+ * that reaches its end with no card never charges (`missing_payment_method: cancel`). Returns the URL to send the
+ * browser to.
  */
-export async function createTrialCheckout(input: CheckoutInput): Promise<string> {
-  const variant = priceFor(input.product, input.priceVariant).variant;
-  const metadata = {
-    user_id: input.user.id,
-    product: input.product,
-    student_id: input.studentId ?? "",
-    covered_student_ids: input.coveredStudentIds.join(","),
-    price_variant: variant,
-  };
-  const automaticTax = process.env.STRIPE_AUTOMATIC_TAX === "1";
+export async function createSubscriptionCheckout(input: SubscriptionCheckoutInput): Promise<string> {
+  const metadata = subscriptionMetadata({ userId: input.user.id, studentId: input.studentId, priceVariant: input.priceVariant });
+  const trialEnd = stripeTrialEnd(input.trialEnd);
   const session = await stripe().checkout.sessions.create({
     mode: "subscription",
     customer: input.customerId,
-    line_items: [{ price: priceIdFor(input.product, variant), quantity: 1 }],
+    line_items: [{ price: priceIdFor("student", metadata.price_variant), quantity: 1 }],
     payment_method_collection: "always",
     subscription_data: {
-      ...(input.trial ? { trial_period_days: TRIAL_DAYS, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}),
+      ...(trialEnd !== null ? { trial_end: trialEnd, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}),
       metadata,
     },
     metadata,
     allow_promotion_codes: true,
     custom_text: { submit: { message: input.sentence } },
-    ...(automaticTax ? { automatic_tax: { enabled: true }, customer_update: { address: "auto" } } : {}),
+    ...(automaticTax() ? { automatic_tax: { enabled: true }, customer_update: { address: "auto" } } : {}),
     success_url: `${input.origin}${input.successPath}`,
     cancel_url: `${input.origin}${input.cancelPath}`,
   });
   if (!session.url) throw new Error("billing: Stripe returned a checkout session without a URL.");
   return session.url;
+}
+
+/**
+ * A hosted Checkout session in setup mode: the household's card, saved once to the parent's customer and charged for
+ * each student they add (commercialization.md "Billing", the household card). Nothing is charged here.
+ */
+export async function createCardSetupCheckout(input: { customerId: string; userId: string; origin: string; successPath: string; cancelPath: string }): Promise<string> {
+  const session = await stripe().checkout.sessions.create({
+    mode: "setup",
+    customer: input.customerId,
+    currency: "usd",
+    setup_intent_data: { metadata: { user_id: input.userId } },
+    custom_text: { submit: { message: "Saved for your household. Each student you add is $20 a year after their 14-day trial, charged to this card." } },
+    success_url: `${input.origin}${input.successPath}`,
+    cancel_url: `${input.origin}${input.cancelPath}`,
+  });
+  if (!session.url) throw new Error("billing: Stripe returned a setup session without a URL.");
+  return session.url;
+}
+
+export interface SavedCard {
+  paymentMethodId: string;
+  brand: string | null;
+  last4: string | null;
+}
+
+/** The card a finished setup session saved, or null when the session isn't a finished setup. */
+export async function cardOfSetupSession(sessionId: string): Promise<{ customerId: string; userId: string | null; card: SavedCard } | null> {
+  const session = await stripe().checkout.sessions.retrieve(sessionId, { expand: ["setup_intent.payment_method"] });
+  if (session.mode !== "setup" || session.status !== "complete") return null;
+  const intent = session.setup_intent;
+  if (!intent || typeof intent === "string") return null;
+  const pm = intent.payment_method;
+  if (!pm || typeof pm === "string") return null;
+  const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
+  if (!customerId) return null;
+  return { customerId, userId: intent.metadata?.user_id ?? null, card: { paymentMethodId: pm.id, brand: pm.card?.brand ?? null, last4: pm.card?.last4 ?? null } };
+}
+
+/** Make a saved card the customer's default for invoices (so every subscription on the customer charges it). */
+export async function setDefaultPaymentMethod(customerId: string, paymentMethodId: string): Promise<void> {
+  await stripe().customers.update(customerId, { invoice_settings: { default_payment_method: paymentMethodId } });
+}
+
+/**
+ * A subscription made by the server, no Checkout: a parent with a card on file adds a student (commercialization.md
+ * "Billing"). Trialing until the student's trial ends, then charged to the card; charged today when the trial is over.
+ */
+export async function createStudentSubscription(input: { customerId: string; paymentMethodId: string; userId: string; studentId: string; trialEnd: string | null; priceVariant?: string }): Promise<Stripe.Subscription> {
+  const metadata = subscriptionMetadata({ userId: input.userId, studentId: input.studentId, priceVariant: input.priceVariant });
+  // The direct API takes any future end (Checkout's two-day minimum doesn't apply); a trial already over charges today.
+  const endMs = input.trialEnd ? new Date(input.trialEnd).getTime() : NaN;
+  const trialEnd = Number.isFinite(endMs) && endMs > Date.now() + 5 * 60_000 ? Math.floor(endMs / 1000) : null;
+  return stripe().subscriptions.create({
+    customer: input.customerId,
+    items: [{ price: priceIdFor("student", metadata.price_variant), quantity: 1 }],
+    default_payment_method: input.paymentMethodId,
+    ...(trialEnd !== null ? { trial_end: trialEnd, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}),
+    payment_settings: { save_default_payment_method: "on_subscription" },
+    ...(automaticTax() ? { automatic_tax: { enabled: true } } : {}),
+    metadata,
+  });
 }
 
 /** The Customer Portal (cancel, card, invoices), returning to `returnUrl`. */
@@ -136,7 +197,7 @@ export async function createPortalSession(customerId: string, returnUrl: string)
   return session.url;
 }
 
-/** Cancel at the period's end (during the trial: at day 14, so the family keeps what it started), or undo that. */
+/** Cancel at the period's end (during the trial: at its end, so the family keeps what it started), or undo that. */
 export async function setCancelAtPeriodEnd(subscriptionId: string, cancel: boolean): Promise<Stripe.Subscription> {
   return stripe().subscriptions.update(subscriptionId, { cancel_at_period_end: cancel });
 }
@@ -163,9 +224,9 @@ export async function webhookEvent(rawBody: string, signature: string | null): P
 const iso = (seconds: number | null | undefined) => (seconds ? new Date(seconds * 1000).toISOString() : null);
 
 /**
- * The row a Stripe subscription means. `user_id` and the product come from the metadata the checkout set; a
- * subscription made outside the checkout (the dashboard) falls back to the customer's account and the price id. Null
- * when neither names an account, which the caller logs: a row without a user can't entitle anyone.
+ * The row a Stripe subscription means. `user_id` and the student come from the metadata the checkout set; a
+ * subscription made outside the app (the dashboard) falls back to the customer's account and the price id. Null when
+ * neither names an account, which the caller logs: a row without a user can't entitle anyone.
  */
 export function rowFromStripe(sub: Stripe.Subscription, userIdFromCustomer: string | null, env: BillingEnv = process.env): Omit<SubscriptionRow, "id" | "created" | "updated" | "reminder_sent_at"> | null {
   const meta = sub.metadata ?? {};
@@ -177,8 +238,8 @@ export function rowFromStripe(sub: Stripe.Subscription, userIdFromCustomer: stri
   if (!product) return null;
   const status = isSubscriptionStatus(sub.status) ? sub.status : null;
   if (!status) return null;
-  const covered = (meta.covered_student_ids ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const studentId = meta.student_id || null;
+  const covered = (meta.covered_student_ids ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   return {
     user_id: userId,
     product,
@@ -191,7 +252,7 @@ export function rowFromStripe(sub: Stripe.Subscription, userIdFromCustomer: stri
     current_period_end: iso(item?.current_period_end),
     cancel_at_period_end: Boolean(sub.cancel_at_period_end),
     canceled_at: iso(sub.canceled_at),
-    covers_student_id: product === "student" ? studentId : null,
+    covers_student_id: studentId,
     covered_student_ids: covered.length ? covered : studentId ? [studentId] : [],
   };
 }
@@ -203,9 +264,8 @@ export interface SyncResult {
 
 /**
  * Writes the row for `sub` (insert or update by `stripe_subscription_id`) with the secret-key client and returns the
- * row as it was before, for the events the change means (lib/billing.ts billingEvents). The covered-students list
- * only grows: a family plan's students at the start stay recorded after they leave the household, so "one trial per
- * student" holds. Null when the subscription names no account Quad knows.
+ * row as it was before, for the events the change means (lib/billing.ts billingEvents). Null when the subscription
+ * names no account Quad knows.
  */
 export async function syncSubscription(service: SupabaseClient, sub: Stripe.Subscription): Promise<SyncResult | null> {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
@@ -228,7 +288,7 @@ export async function syncSubscription(service: SupabaseClient, sub: Stripe.Subs
   return { prev, next: written as SubscriptionRow };
 }
 
-/** The subscription a finished Checkout session made, fetched from Stripe; null when the session has none yet. */
+/** The subscription a finished Checkout session made, fetched from Stripe; null when the session has none. */
 export async function subscriptionOfSession(sessionId: string): Promise<Stripe.Subscription | null> {
   const session = await stripe().checkout.sessions.retrieve(sessionId, { expand: ["subscription"] });
   const sub = session.subscription;

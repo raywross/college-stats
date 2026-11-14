@@ -1,10 +1,14 @@
 # Commercialization: The Advisor, $20 a Year per Student, Counselors Free
 
 > Status: **billing built 2026-11-14** on `feature/billing` (see [As built](#as-built-2026-11-14) and
-> [Setup (owner)](#setup-owner)): Stripe Checkout, the webhook, the `subscriptions` table, the entitlement map behind
-> `allowed()`, the pricing page, the account row, the trial's email, the nightly reconcile, and the `advisor.price_live_at`
-> switch. Nothing is gated or sold until the owner connects a Stripe account and turns the switch on; the legal setup
-> below is still the owner's. **Rewritten** 2026-10-26 after the roadmap review, then **redrawn the same day on the
+> [Setup (owner)](#setup-owner)), and **redrawn the same day on the owner's decisions**: one price, $20 a year per
+> student, no family price; the trial starts the moment a student record exists, with no card, and a student never needs
+> a parent; parents and counselors free; a parent keeps one card for the household and pays for each student they add; a
+> counselor may invite a parent. Stripe Checkout, the webhook, the `subscriptions` and `advisor_trials` tables, the
+> entitlement map behind `allowed()`, the pricing page, the account row, the trial's email, the nightly reconcile, and the
+> `advisor.price_live_at` switch. Nothing is gated or sold until the owner connects a live Stripe account and turns the
+> switch on; the legal setup below is still the owner's. Where the sections below still say "family" or "card up front",
+> they are the first design; the As built section is what runs. **Rewritten** 2026-10-26 after the roadmap review, then **redrawn the same day on the
 > owner's decision**: "the commercialization opportunity is really all around the planner. We should charge $20 a year
 > for the 'virtual advisor' for each kid and maybe have a discount where it's $30 for a family. Then for counselors we
 > should let them use the site for free to help them manage and collect data from their students. The students will
@@ -38,13 +42,16 @@ placements, no featured listings, no advisor commissions: the three models the 2
 ([ideas/README.md](../ideas/README.md), proposal 8), each named on the pricing page as something the money never buys.
 
 ## Prices
-| | Free | Advisor, one student | Advisor, family |
-|---|---|---|---|
-| For | Everyone; a family looking; a counselor's office | One student's plan through senior year | A guardian with more than one student |
-| Price | $0 | **$20 a year** | **$30 a year** |
-| Covers | | one student, whoever pays | every student in the guardian's active households, now and added later |
-| Bought by | | a guardian, or the student at 16 or older; a younger student asks a parent ([advisor.md](advisor.md#2-the-trial)) | a guardian |
-| Trial | | 14 days, card up front | 14 days, card up front |
+> **Redrawn 2026-11-14 (owner):** "I want to get rid of the family pricing. Let's just make it $20 per student.
+> Basically parents and counselors are free. Each student is $20." The family price below is retired; the table is the
+> model as built ([As built](#as-built-2026-11-14)).
+
+| | Free | Quad Advisor |
+|---|---|---|
+| For | Everyone; a parent's account and household; a counselor's office | One student's advisor through senior year |
+| Price | $0 | **$20 a year, per student** |
+| Paid by | | the student (any age), or a parent, who keeps one card for the household and pays for each student they add |
+| Trial | | **14 days from the day the student's record is made**, no card needed; add a card during it and the year starts when it ends |
 
 **Annual only** (owner, 2026-10-26): a plan runs on the school year's rhythm, and a monthly price invites a family to
 subscribe in December and leave in May. At $20, Stripe's $0.30 + 2.9% is about 4.4% of revenue, so no annual-versus-monthly steering is needed on
@@ -193,117 +200,151 @@ is a prerequisite, and the estimate's method moves private at launch ([../chance
 - Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ADVISOR_STUDENT`, `STRIPE_PRICE_ADVISOR_FAMILY`.
 
 ## As built (2026-11-14)
-Built on `feature/billing` together with [advisor.md](advisor.md#as-built-2026-11-14-part-3-the-trial) part 3 (the
-trial's own pages and words are written up there). The rule that governs everything: **nothing changes until the
-switch is on.** `allowed()` answers yes to every capability, the splash page keeps its preview words, the Advisor tab
-shows no line about money, and the caseload chip stays "Preview" until Stripe's four variables are set on the
-deployment *and* `advisor.price_live_at` is set from `/admin/settings`. Clearing the setting makes the advisor free for
-everyone again. So the code merges and sits inert until the owner's setup below.
+Built on `feature/billing` together with [advisor.md](advisor.md#as-built-2026-11-14-part-3-the-trial) part 3, then
+**redrawn the same day on the owner's decisions** (the family price gone; a student never needs a parent; the trial
+starts when the account is created; parents and counselors free; one card for the household; a counselor may invite a
+parent). The rule that governs everything: **nothing changes until the switch is on.** `allowed()` answers yes to every
+capability, the splash page keeps its preview words, the Advisor tab shows no line about money, and the caseload chip
+stays "Preview" until Stripe's three variables are set on the deployment *and* `advisor.price_live_at` is set from
+`/admin/settings`. Clearing the setting makes the advisor free for everyone again. So the code merges and sits inert
+until the owner's setup below.
 
-**The rules, pure** (`lib/billing.ts`, tested in `tests/billing.test.mts`): the two products and list prices
-(`LIST_PRICES`, `priceFor(product, variant)` with only the `list` variant until the Growth console issues campaign
-codes), the trial's constants (14 days; self-pay at 16, permission confirmed under 18), `isEarly()` and the early
-period through 2027-08-31, what a set of subscription rows means for one student (`statusFrom`: a paid year beats a
-trial beats lapsed; `past_due` keeps the advisor whole through Stripe's retries), `entitlementFrom()` (not live →
-whole; trial or year → whole; early → whole; else read-only), the **feature map** as one typed list (`FEATURE_MAP`:
-each capability, whether free, whether a lapsed plan still reads it) and `allowedUnder(entitlement, capability, mode)`,
-the telemetry events a change in a row means (`billingEvents(prev, next)`), and the sentences.
+### The model as built
+| | Who | What |
+|---|---|---|
+| **The price** | every student | **$20 a year**, one product, one Stripe Price. No family price, no tiers |
+| **The trial** | every student record | **14 days from the moment the record is made**, with no card: a student's own sign-up, a parent's Add a student, a counselor's invitation all start it, through one database trigger (`advisor_trials`). One trial per student, by construction |
+| **Who pays** | the student or a parent | A student of any age may pay for their own advisor (`/advisor/start` → Stripe Checkout, card collected, the first charge at the trial's end). A parent keeps **one card for the household** (Checkout in setup mode, nothing charged) and pays $20 for each student they add: the subscription is made on the server at the moment the student is added, trialing until the student's trial ends, then charged |
+| **Free** | parents, counselors | A parent's account, the household, and everything a parent sees of a student's advisor; the counselor portal and everything in it |
+| **A counselor's student** | the student, or a parent | The record's trial starts when it is made; when the student logs in the Advisor tab asks for a card in the trial's last three days (quietly before). The counselor can **invite a parent** from the student's page; the parent joins the household and can pay |
+| **Lapsed** | a trial that ended with no card; a cancelled or failed year | Read-only: the list, its levels, the calendar, and the offers stay; writes, the guides, the weekly email, the texts, and the alerts stop. Nothing deleted; a subscription restores it |
+| **Early accounts** | made before the switch | Free through 2027-08-31 ([open-doors.md](open-doors.md)), whatever their trial says |
+
+**Minors.** The 16-and-older rule and the permission checkbox of the first design are gone (owner: "a student should be
+able to start their own trial, they shouldn't need a parent"). The sheet and the pricing page state the Terms'
+sentence instead: under 18, a purchase is made with a parent or guardian's permission (`MINOR_TERMS_SENTENCE`).
+
+**The rules, pure** (`lib/billing.ts`, tested in `tests/billing.test.mts`): the product and price (`LIST_PRICES`,
+`priceFor()` with only the `list` variant until the Growth console issues campaign codes), `TRIAL_DAYS`, the trial row
+(`TrialRow`, `trialRunning()`), `stripeTrialEnd()` (Checkout needs the end at least 48 hours ahead, else the year starts
+today), `isEarly()` and the early period, `statusFrom(rows, trial)` (a paid year beats a trial; the database's trial
+counts as a trial; an ended trial with nothing paying is lapsed), `entitlementFrom()` (not live → whole; a live
+subscription → whole and `paid`; a running trial → whole; early → whole; else read-only), the **feature map** as one
+typed list (`FEATURE_MAP`, `allowedUnder(entitlement, capability, mode)`), the telemetry events a change in a row means
+(`billingEvents(prev, next)`), the chip's words, and the sentences.
 
 **The map's rows.** The `Capability` type (`lib/planner/types.ts`) gained `visits.view`, `visits.alerts`, `api.key`,
-`cost.family`, and `plan.dossier` beside the planner's eight and the essays' two, so the whole table above is one
-list the code reads. Free: `visits.view` and `api.key`. Read when lapsed: the tab, rounds, calendar, offers, essays,
-and the family's price; never the visit log, the reminders, the texts, the nudge, the reader, the alerts, or the
-dossier. The last three rows (`visits.alerts`, `cost.family`, `plan.dossier`) are in the map ahead of the code that
-will ask for them.
+`cost.family`, and `plan.dossier` beside the planner's eight and the essays' two, so the whole table above is one list
+the code reads. Free: `visits.view` and `api.key`. Read when lapsed: the tab, rounds, calendar, offers, essays, and the
+family's price; never the visit log, the reminders, the texts, the nudge, the reader, the alerts, or the dossier.
 
 **The hook** (`lib/entitlements.ts`, importable under plain node; the server modules load inside the functions):
 `allowed(user, capability, { studentId?, mode? })`. A free row is yes at once; billing unconfigured or the price not
-live is yes with no read (the setting rides the planner's one `app_settings` read, `PLANNER_SETTING_KEYS`); then one
-`advisor_access(students[])` per request and student. With a student named, that student's entitlement decides;
-without one (the planner's `ready()` runs before an action knows its list), the viewer's own record or any child they
-reach as a guardian being whole is enough, and a viewer with no students is allowed. That coarse rule means a parent
-with one covered child and one not can write on both plans; the per-student gate on the Advisor tab (the banner, the
-read-only words) is exact. `entitlementFor(studentId)`, `advisorStatusFor(ids)` (the caseload chip: Advisor / Trial /
-Not yet / Lapsed once live, an early account reading "Advisor"), `advisorBillingFor(studentId, viewer)` (the tab's and
-the account page's facts), and `entitledStudents(client, ids, capability)` for the cron jobs (everyone while not
-live; a failed read keeps everyone and logs). `planFor()` reads with `mode: "read"`, so a lapsed plan loads.
+live is yes with no read (the setting rides the planner's one `app_settings` read); then one `advisor_access(students[])`
+per request and student, which returns the accounts behind the student, their trial, and the subscriptions paying for
+them. With a student named, that student's entitlement decides; without one (the planner's `ready()` runs before an
+action knows its list), the viewer's own record or any child they reach as a guardian being whole is enough. That
+coarse rule means a parent with one covered child and one not can write on both plans; the per-student gate on the
+Advisor tab is exact. `advisorStatusFor(ids)` (the caseload chip: Advisor / Trial / Not yet / Lapsed once live),
+`advisorBillingFor(studentId, viewer)` (the tab's and the account page's facts: the trial's end and days left, whether a
+subscription pays, whether the viewer holds it), `entitledStudents(client, ids, capability)` for the cron jobs.
+`planFor()` reads with `mode: "read"`, so a lapsed plan loads.
 
-**The table** (`supabase/migrations/20261114120000_subscriptions.sql`, to apply to dev, then prod): `subscriptions`
-(one row per Stripe subscription: `user_id`, `product`, Stripe's `status` word, the customer and subscription ids,
-`price_id`, `price_variant`, `trial_end`, `current_period_end`, `cancel_at_period_end`, `canceled_at`,
-`covers_student_id` for a student plan, `covered_student_ids` for one-trial-per-student, `reminder_sent_at`),
-`billing_customers` (the Stripe customer per account), `stripe_events` (each webhook id handled once).
-Written only by the server with the secret key; a person reads their own rows, an admin every row.
-`subscriptions_covering(student)` is the coverage rule (a student plan naming them, or a family plan held by a guardian
-sharing an active household with them or managing their record), and `advisor_access(students[])` the one read.
-`admin_set_setting()` learns `advisor.price_live_at` (an ISO timestamp or null).
+**The tables** (`20261114120000_subscriptions.sql`, then `20261114130000_billing_per_student.sql`; applied to dev
+2026-11-14, prod at the release): `subscriptions` (one row per Stripe subscription: the payer's `user_id`, Stripe's
+status word, the ids, the dates, `covers_student_id`), `billing_customers` (the Stripe customer per account, now with
+the card on file: payment method id, brand, last four), `stripe_events` (each webhook id handled once), and
+**`advisor_trials`** (one row per student: `started_at`, `ends_at`, `source`, `reminder_sent_at`), written by the
+trigger `students_start_trial` on every insert into `students`. Written only by the server with the secret key; a
+person reads their own subscriptions and the trials of students they may see; an admin every subscription.
+`subscriptions_covering(student)` is the student rule alone; `advisor_access(students[])` the one read;
+`org_invite_guardian(student, email, name)` the counselor's parent invitation. `admin_set_setting()` knows
+`advisor.price_live_at`.
 
-**Stripe** (`lib/stripe.ts`, server-only, the `stripe` SDK): `billingConfigured()`, the price id per product from
-env, `ensureCustomer()`, `createTrialCheckout()` (as advisor.md specifies; no trial for a student covered before;
-`allow_promotion_codes` for the counselor code of question 4 whenever the owner wants one; Stripe Tax when
-`STRIPE_AUTOMATIC_TAX=1`), `createPortalSession()`, `setCancelAtPeriodEnd()`, `webhookEvent()` (signature over the raw
-body), and `syncSubscription()`, the one mapping from a Stripe subscription to a row (`rowFromStripe`: metadata first,
-the customer's account and the price id as fallbacks; `current_period_end` from the item, where Stripe's current API
-keeps it). `lib/billing-server.ts` adds `applySubscription()` (store, then send the change's events), the family
-plan's students at its start, the reminder's facts and send, and `siteOrigin()` for links from a webhook.
+**Stripe** (`lib/stripe.ts`, server-only, the `stripe` SDK): `billingConfigured()`, the price id, `ensureCustomer()`,
+`createSubscriptionCheckout()` (`mode: subscription`, `payment_method_collection: always`, `trial_end` = the student's
+trial end when far enough ahead, a trial reaching its end with no card cancels, never charges; promotion codes allowed
+for question 4; Stripe Tax when `STRIPE_AUTOMATIC_TAX=1`), `createCardSetupCheckout()` (`mode: setup`, the household
+card), `createStudentSubscription()` (the server-made subscription against the saved card), `cardOfSetupSession()`,
+`setDefaultPaymentMethod()`, `createPortalSession()`, `setCancelAtPeriodEnd()`, `webhookEvent()` (signature over the
+raw body), and `syncSubscription()`, the one mapping from a Stripe subscription to a row (`rowFromStripe`: metadata
+first, the customer's account and the price id as fallbacks). `lib/billing-server.ts` adds `applySubscription()`
+(store, then send the change's events), `cardOnFile()`, `saveCard()`, `subscribeWithCard()`, the trial email in both
+forms (a card on file: nothing to do; none: add a card), and `siteOrigin()` for links from a webhook.
 
-**Routes and pages.** `POST /api/stripe/webhook` (`checkout.session.completed`, the three `customer.subscription.*`
-changes, `trial_will_end`; every other type acknowledged; a failed handler removes its event row so Stripe's retry
-isn't taken for a duplicate). `/advisor/start` and its return, `/account`'s row with Cancel / Keep and the portal,
-`/pricing` (two cards, what stays free, the map as a Free · Advisor table, counselors, questions, what the money never
-buys; linked from the footer), the Advisor tab's line. `/api/cron/subscriptions` at 13:45 UTC (`lib/jobs/registry.ts`,
-`vercel.json`): every live row refetched from Stripe through the same path, a missed trial reminder sent. The Your-week
-and day-before jobs skip students whose advisor is read-only.
+**Routes and pages.**
+- `POST /api/stripe/webhook`: `checkout.session.completed` (a subscription session's subscription stored; a setup
+  session's card recorded), the three `customer.subscription.*` changes, `trial_will_end`; every other type acknowledged;
+  a failed handler removes its event row so Stripe's retry isn't taken for a duplicate.
+- `/advisor/start`: the one sheet about money: the student (a select when a parent has several), what will be charged
+  and when, one button: a charge to the card on file when there is one (`subscribeWithCard`, back at once), else on to
+  Checkout; back through `/advisor/start/return`, which stores the subscription before the webhook lands.
+- `/account/billing/card` and its return: the household's card, saved once; a parent lands here from Household when
+  they add a student with no card on file (`app/household/actions.ts` `addPerson`: the gate, then `payForStudent()` once
+  the record exists, for a managed student and for one invited by email alike).
+- `/account`'s Advisor row: the card on file (Add or Change), each subscription this person pays for by the student's
+  name with its date and Cancel / Keep, "Subscribe again" for a lapsed one, the Customer Portal for invoices and receipts.
+- The Advisor tab's line (`components/advisor/BillingLine.tsx`): a trial with no card, quietly "Trial ends Nov 28 · 14
+  days free, no card needed · Add a card to keep it", and a banner in the last three days; a trial a card pays for,
+  "Trial ends Nov 28, then the year starts · Manage"; lapsed, the read-only banner and Subscribe.
+- `/pricing`: one price, "Parents and counselors: free", the map as a Free · Advisor table, the questions, what the
+  money never buys; public and prerendered hourly (it reads the setting with the anonymous client). Linked from the
+  footer.
+- The splash page: once live, "Start your 14-day free trial" and "14 days free, no card needed. $20 a year after.",
+  with sign-up back to `/advisor` (the trial starts with the record); the Questions gain the trial, the card, who pays,
+  and lapsing.
+- `/api/cron/subscriptions` at 13:45 UTC: every live subscription refetched from Stripe through the same path; a missed
+  `trial_will_end` reminder sent; and for **cardless trials** ending within three days with nothing paying, the "add a
+  card" email to the student's own account (or the guardian managing the record), once per trial.
+- The Your-week and day-before jobs skip students whose advisor is read-only.
+- The counselor's student page: a **Family** panel with "Invite a parent" ([counselor-portal.md](counselor-portal.md#inviting-a-parent-2026-11-14)).
 
 **Admin.** `/admin/settings` "Advisor price": live since when, whether Stripe is configured on this deployment, the
-subscriptions by product and status, and one button that sets the moment to now or clears it (logged as `setting.set`).
+subscriptions by status, and one button that sets the moment to now or clears it (logged as `setting.set`).
 
-**Not built, by design or for later:** the Growth console's price variants beyond `list` (the hook and the checkout
-take a variant; the campaign cookie and the Stripe Prices per variant come with the console); the yearly renewal
-reminder two weeks before (Stripe's own renewal emails can carry it until then); upgrading a student plan to a family
-plan with proration (a family buys the family plan; a student plan's year runs out); the prefilled parent invitation
-from "Ask a parent" (the household's ordinary invitation does the job); the counselor-recommended promotion code
+**Telemetry**: `trial_started` (a card arrived during the trial), `trial_reminder_sent`, `trial_converted`,
+`trial_cancelled {day}`, `subscription_cancelled`, `subscription_renewed`, from the server, from the change in the
+stored row; `product` is always `student` now ([telemetry.md](telemetry.md#event-registry)).
+
+**Not built, by design or for later:** the Growth console's price variants beyond `list`; the yearly renewal reminder
+two weeks before (Stripe's own renewal emails carry it until then); the counselor-recommended promotion code
 (question 4, cheap to add in Stripe when decided); refunds (by hand from the Stripe dashboard, under the stated rule);
-Terms of service, the privacy page's payments paragraph, and the business and tax setup (the owner's list below).
+a student joining a household by code (a student invites a parent from Household today, which is the same end);
+Terms of service, the privacy page's payments paragraph, and the business and tax setup (the owner's list above).
 
 ## Setup (owner)
-In order; nothing is sold until step 7, and nothing on the site changes until then either.
+In order; nothing is sold until step 6, and nothing on the site changes until then either. Steps 1 to 4 were done for
+the **sandbox** on 2026-11-14 (the one product with its $20 yearly price, the webhook destination pointed at the
+`feature/billing` branch preview with Vercel's protection-bypass secret on the URL, the three values on Vercel Preview
+and in `.env.local`, both migrations applied to dev); the live account's steps remain.
 
-1. **Create the Stripe account** at <https://dashboard.stripe.com/register>: the business is the entity behind Quad
-   (an LLC or a sole proprietorship; Stripe asks for its legal name, address, EIN or SSN, a bank account for payouts,
-   and a statement descriptor, which is what appears on a card statement: "QUAD ADVISOR" fits). Stay in **test mode**
-   (the toggle at the top of the dashboard) until step 7.
-2. **Make the two products** (Product catalog → Add product), each with one recurring price, **yearly**, USD:
-   *Quad Advisor, one student*: $20.00 a year; *Quad Advisor, family*: $30.00 a year. Copy each price's id
-   (`price_…`, shown on the product page under Pricing).
-3. **Make the webhook** (Developers → Webhooks → Add destination): endpoint
-   `https://usequad.app/api/stripe/webhook`, events `checkout.session.completed`, `customer.subscription.created`,
-   `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.trial_will_end`. Copy its
-   signing secret (`whsec_…`). For the preview deployment, a second destination at
-   `https://preview.usequad.app/api/stripe/webhook` with the same events and its own secret.
-4. **Turn on the Customer Portal** (Settings → Billing → Customer portal): allow customers to cancel subscriptions
-   (at the end of the period), update payment methods, and view invoices; no plan switching needed. Under Settings →
-   Billing → Subscriptions and emails, turn on the emails for upcoming renewals and failed payments, and set Smart
-   Retries so a failed charge is retried before the subscription is marked unpaid.
-5. **Put the four values in the environment.** Add to `.env.local` (dev, test-mode values) and to Vercel:
-   `STRIPE_SECRET_KEY` (Developers → API keys → Secret key), `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ADVISOR_STUDENT`,
-   `STRIPE_PRICE_ADVISOR_FAMILY`. For Vercel: `npm run vercel-env -- STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET
-   STRIPE_PRICE_ADVISOR_STUDENT STRIPE_PRICE_ADVISOR_FAMILY --target preview` with the test values, then
-   `--target production` with the live ones at step 7, and `--redeploy`. Optional: `SITE_URL=https://usequad.app`
-   (links in the trial email).
-6. **Apply the migration** `20261114120000_subscriptions.sql` in the Supabase SQL Editor (dev, then prod), and
-   **test the whole path in test mode** on the preview deployment: turn the price on at `/admin/settings`, start a
-   trial as a test student with Stripe's test card `4242 4242 4242 4242` (any future expiry, any CVC), see the line on
-   the Advisor tab and the row on `/account`, cancel and keep, and check the webhook's deliveries in the dashboard
-   (every event 200). Stripe's test clocks (Developers → Test clocks) advance a trial to its end to see the reminder
-   and the charge without waiting fourteen days. Then turn the price back off.
-7. **Go live**: activate the account (Stripe reviews the business details), switch the dashboard to live mode, and
-   repeat steps 2, 3, and 5 with live values for Production. Register with **Stripe Tax** (Settings → Tax) if the
-   business needs to collect sales tax on digital goods where it has nexus, then set `STRIPE_AUTOMATIC_TAX=1`. Put the
-   Terms of service, the refund rule, and the payments paragraph on the privacy page live (the legal list above). Then
-   turn the price on at `/admin/settings`: from that moment new accounts start the trial, and every account made before
-   it keeps the advisor free through 2027-08-31.
-
+1. **The Stripe account**: the business behind Quad (legal name, address, EIN or SSN, a bank account for payouts) and a
+   statement descriptor ("QUAD ADVISOR" fits). Stripe's dashboard has no Developers tab for new accounts: the keys are at
+   dashboard.stripe.com/apikeys and the webhooks at dashboard.stripe.com/webhooks (Workbench), with `/test/` in the path
+   for a sandbox.
+2. **One product, one price**: Product catalog → "Quad Advisor" → one recurring price, **$20.00, yearly**, USD. Copy the
+   price id (`price_…`). Check the amount is $20.00, not $19.99 (the sandbox's first price was, and was replaced).
+3. **The webhook** (Developers → Webhooks → Create an event destination; pick the classic *snapshot* payload style, or
+   the Checkout events don't appear in the search): endpoint `https://usequad.app/api/stripe/webhook`, events
+   `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
+   `customer.subscription.deleted`, `customer.subscription.trial_will_end`. Copy its signing secret (`whsec_…`). The
+   sandbox's destination points at a preview deployment, which sits behind Vercel Authentication: Vercel's **protection
+   bypass for automation** secret goes on the URL as `?x-vercel-protection-bypass=…`. The API makes a destination in one
+   call when the dialog is in the way (`POST /v1/webhook_endpoints`).
+4. **The Customer Portal** (Settings → Billing → Customer portal): allow cancelling at the end of the period, updating
+   payment methods, and viewing invoices. Under Subscriptions and emails, turn on renewal and failed-payment emails and
+   Smart Retries.
+5. **The three values**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ADVISOR_STUDENT`. Sandbox values in
+   `.env.local` and on Vercel Preview (`npm run vercel-env -- … --target preview`); live values entered in Vercel's
+   dashboard as Sensitive, Production only, never through a laptop. Optional: `SITE_URL=https://usequad.app` (links in
+   the trial email), `STRIPE_AUTOMATIC_TAX=1` after Stripe Tax is registered.
+6. **Test in the sandbox**, then go live. On the preview: turn the price on at `/admin/settings`; as a new test student,
+   see the trial line on the Advisor tab; add a card with `4242 4242 4242 4242` from the line and see "Trial ends …, then
+   the year starts"; as a test parent with no card, add a student and be sent to the card page, then back, and see the
+   student's row on `/account`; cancel and keep; check every delivery on the webhook's page is 200. Stripe's test clocks
+   advance a trial to its end. Turn the price off afterwards. For live: activate the account, repeat steps 2 to 5 with
+   live values, apply both migrations to prod, put the Terms live, then turn the price on. From that moment every new
+   student starts the trial and every account made before it keeps the advisor free through 2027-08-31.
 ## Open questions
 1. ~~The taste~~ Decided 2026-10-26: a 14-day trial with the card up front ([advisor.md](advisor.md)).
 2. ~~The name on the site~~ Decided 2026-10-26: Quad Advisor ([advisor.md](advisor.md#1-the-name)).

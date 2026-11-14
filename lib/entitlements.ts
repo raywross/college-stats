@@ -26,6 +26,7 @@ import {
   type Entitlement,
   type StatusWord,
   type SubscriptionRow,
+  type TrialRow,
 } from "./billing.ts";
 import type { Capability } from "./planner/types.ts";
 
@@ -37,9 +38,9 @@ export const CAPABILITIES: readonly Capability[] = FEATURE_MAP.map((r) => r.capa
 /** The message a Server Action returns when a capability isn't allowed. */
 export const NOT_ALLOWED_MESSAGE = "That part of the advisor isn't available on your account.";
 
-/** Billing is on when Stripe's four variables are set (lib/stripe.ts billingConfigured, kept SDK-free here). */
+/** Billing is on when Stripe's three variables are set (lib/stripe.ts billingConfigured, kept SDK-free here). */
 export function billingConfigured(env: Record<string, string | undefined> = process.env): boolean {
-  return Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_ADVISOR_STUDENT && env.STRIPE_PRICE_ADVISOR_FAMILY);
+  return Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_ADVISOR_STUDENT);
 }
 
 /* ------------------------------------------------------------------ */
@@ -76,7 +77,8 @@ export interface AdvisorAccess {
   studentId: string;
   /** When the accounts behind the student were created (their own, or the guardian managing their record). */
   created: (string | null)[];
-  trialUsed: boolean;
+  /** The trial the database started with the student's record (advisor_trials); null for a record from before it. */
+  trial: TrialRow | null;
   subscriptions: SubscriptionRow[];
 }
 
@@ -87,8 +89,8 @@ export async function readAdvisorAccess(client: SupabaseClient, studentIds: read
   const { data, error } = await client.rpc("advisor_access", { p_students: ids });
   if (error) throw new Error(`entitlements: reading advisor access failed: ${error.message}`);
   const out = new Map<string, AdvisorAccess>();
-  for (const r of (data ?? []) as { student_id: string; created: (string | null)[]; trial_used: boolean; subscriptions: SubscriptionRow[] }[]) {
-    out.set(r.student_id, { studentId: r.student_id, created: r.created ?? [], trialUsed: Boolean(r.trial_used), subscriptions: r.subscriptions ?? [] });
+  for (const r of (data ?? []) as { student_id: string; created: (string | null)[]; trial: TrialRow | null; subscriptions: SubscriptionRow[] }[]) {
+    out.set(r.student_id, { studentId: r.student_id, created: r.created ?? [], trial: r.trial ?? null, subscriptions: r.subscriptions ?? [] });
   }
   return out;
 }
@@ -100,6 +102,7 @@ export function entitlementOf(access: AdvisorAccess | undefined, priceLiveAtDate
     stripeConfigured: billingConfigured(),
     accountsCreated: access?.created ?? [],
     rows: access?.subscriptions ?? [],
+    trial: access?.trial ?? null,
     today,
   });
 }
@@ -160,7 +163,7 @@ export async function allowed(user: { id: string } | null, capability: Capabilit
 /** The chip's status and words live in lib/billing.ts (pure, client-safe for the caseload); re-exported for the pages. */
 export { ADVISOR_STATUS_LABEL, type AdvisorStatus };
 
-/** The status word an entitlement shows: whole by subscription or early is "active", a trial "trial", else the plan's state. */
+/** The status word an entitlement shows: a trial "trial"; whole by a paid year or early "active"; else the plan's state. */
 export function statusWordOf(e: Entitlement): Exclude<AdvisorStatus, "preview"> {
   if (e.status === "trial") return "trial";
   if (e.whole) return "active";
@@ -186,33 +189,37 @@ export interface AdvisorBilling {
   status: AdvisorStatus;
   whole: boolean;
   because: Entitlement["because"];
+  /** The trial's end: the database's trial, or Stripe's when a subscription carries one. */
   trialEnd: string | null;
+  /** Whole days until the trial ends (0 on its last day), or null without a trial; computed here so components stay pure. */
+  trialDaysLeft: number | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
-  product: SubscriptionRow["product"] | null;
+  /** A live subscription pays for the student (a card is on file; the year will be charged). */
+  paid: boolean;
   /** The viewer holds the subscription (so Manage and Cancel are theirs to press). */
   mine: boolean;
-  trialUsed: boolean;
 }
 
 /** The Advisor tab's and the account page's facts about one student's billing, as the viewer may read them. */
 export async function advisorBillingFor(studentId: string, viewerId: string | null): Promise<AdvisorBilling> {
-  const none: AdvisorBilling = { status: "preview", whole: true, because: "not-live", trialEnd: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, product: null, mine: false, trialUsed: false };
+  const none: AdvisorBilling = { status: "preview", whole: true, because: "not-live", trialEnd: null, trialDaysLeft: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, paid: false, mine: false };
   if (!billingConfigured()) return none;
   const live = await priceLiveAt();
   if (live === null) return none;
   const access = (await accessFor([studentId])).get(studentId);
   const e = entitlementOf(access, live);
+  const trialEnd = e.row?.trial_end ?? e.trial?.ends_at ?? null;
   return {
     status: statusWordOf(e),
     whole: e.whole,
     because: e.because,
-    trialEnd: e.row?.trial_end ?? null,
+    trialEnd,
+    trialDaysLeft: trialEnd ? Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / 86_400_000)) : null,
     currentPeriodEnd: e.row?.current_period_end ?? null,
     cancelAtPeriodEnd: e.row?.cancel_at_period_end ?? false,
-    product: e.row?.product ?? null,
+    paid: e.paid,
     mine: e.row !== null && viewerId !== null && e.row.user_id === viewerId,
-    trialUsed: access?.trialUsed ?? false,
   };
 }
 

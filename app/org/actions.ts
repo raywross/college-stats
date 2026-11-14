@@ -376,6 +376,45 @@ export async function askStudent(_prev: OrgActionState, form: FormData): Promise
   return { status: "done", message: "Asked." };
 }
 
+export type InviteParentState =
+  | { status: "idle" }
+  | { status: "invited"; email: string; link: string | null; emailed: boolean; expires: string }
+  | { status: "error"; message: string };
+
+/**
+ * Invite a parent for a student on the caseload (specs/product/counselor-portal.md "Inviting a parent"; owner,
+ * 2026-11-14): the database puts the student in a household (theirs, or a new one named after them) and makes the
+ * ordinary guardian invitation; the counselor is never a member. The link is emailed when email is set up and always
+ * shown to copy, like the household's own invitations.
+ */
+export async function inviteParent(_prev: InviteParentState, form: FormData): Promise<InviteParentState> {
+  const account = await signedIn();
+  if (!account) return SESSION_ENDED;
+  const student = id(form, "student");
+  const email = text(form, "email").toLowerCase();
+  const name = text(form, "name").slice(0, 80) || null;
+  if (!student) return BAD_REQUEST;
+  if (!EMAIL_RE.test(email) || email.length > 254) return { status: "error", message: "Enter the parent's email address." };
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.rpc("org_invite_guardian", { p_student: student, p_email: email, p_display_name: name });
+  if (error) return failed(error, "org_invite_guardian");
+  const inv = data as { id: string; token: string; expires_at: string; household_id: string; household_name: string };
+  const { deliverInvitation } = await import("@/app/household/actions");
+  const delivered = await deliverInvitation(supabase, {
+    household: inv.household_id,
+    householdName: inv.household_name,
+    name: name ?? "A parent",
+    email,
+    side: "guardian",
+    token: inv.token,
+    expiresAt: inv.expires_at,
+    inviter: account.profile.display_name,
+  });
+  refresh();
+  if (delivered.status !== "invited") return delivered.status === "error" ? delivered : BAD_REQUEST;
+  return { status: "invited", email, link: delivered.link, emailed: delivered.emailed, expires: delivered.expires };
+}
+
 /** Mark an ask done: the family from the notice (a custom ask), or the office. */
 export async function completeAsk(_prev: OrgActionState, form: FormData): Promise<OrgActionState> {
   if (!(await signedIn())) return SESSION_ENDED;

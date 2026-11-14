@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SplashSection } from "@/components/advisor/Frame";
-import { priceLabel, SELF_PAY_AGE, TRIAL_DAYS } from "@/lib/billing";
+import { priceLabel, TRIAL_DAYS } from "@/lib/billing";
 
 /**
  * Questions (advisor.md "3. The page", Questions), as a `<details>` list. Four hold while Quad is in preview; once the
@@ -37,31 +37,27 @@ export const QUESTIONS: { q: string; a: ReactNode }[] = [
   },
 ];
 
-/** The questions once the trial is live (advisor.md "Questions": trial, card, cancel, what stays free, under 16, the family price, lapsing). */
+/** The questions once the price is live (advisor.md "Questions": the trial, the card, cancelling, what stays free, students and parents, lapsing). */
 export const TRIAL_QUESTIONS: { q: string; a: ReactNode }[] = [
   {
     q: "How does the free trial work?",
-    a: <>{TRIAL_DAYS} days, the whole advisor, with your card on file. Cancel before it ends and nothing is charged. After that it&apos;s {priceLabel("student")} for one student or {priceLabel("family")} for the whole family, annual only.</>,
+    a: <>Create an account and the whole advisor is yours for {TRIAL_DAYS} days, no card needed. After that it&apos;s {priceLabel("student")} per student, annual only. Do nothing and nothing is charged.</>,
   },
   {
-    q: "Why a card up front?",
-    a: <>So the advisor carries on without a gap when the trial ends. Payment is handled by Stripe; Quad never sees your card. One trial per student.</>,
+    q: "When do I pay?",
+    a: <>Add a card any time during the trial and the year starts when the trial ends, without a gap. Payment is handled by Stripe; Quad never sees your card.</>,
   },
   {
     q: "How do I cancel?",
-    a: <>From your account page, any time, in one tap; a trial cancelled early still runs to its end. Everything you entered stays.</>,
+    a: <>From your account page, any time, in one tap. A subscription cancelled runs to the end of what&apos;s paid. Everything you entered stays.</>,
   },
   {
     q: "What stays free?",
     a: <>Every college&apos;s page, Explore, Compare, the data, the glossary, your account, your record, and Quad&apos;s estimate on every college page. The advisor is what&apos;s built on them.</>,
   },
   {
-    q: `I'm under ${SELF_PAY_AGE}. Can I use it?`,
-    a: <>Yes. Anyone 13 or older can make an account. A parent starts the trial for a student under {SELF_PAY_AGE}; at {SELF_PAY_AGE} or older you can start it yourself, with a parent&apos;s okay.</>,
-  },
-  {
-    q: "What does the family price cover?",
-    a: <>Every student in your households, now and added later, for {priceLabel("family")}. Parents see the same advisor the student does.</>,
+    q: "Who pays, the student or the parent?",
+    a: <>Either. A student can start their own trial and pay for their own advisor. A parent keeps one card for the household and pays for each student they add, {priceLabel("student")} each. Parents and counselors never pay for their own accounts.</>,
   },
   {
     q: "What happens if I stop paying?",

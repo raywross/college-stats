@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { FEATURE_MAP, parsePriceLiveAt, PRICE_LIVE_SETTING, priceLabel, REFUND_RULE, SELF_PAY_AGE, TRIAL_DAYS } from "@/lib/billing";
+import { FEATURE_MAP, MINOR_TERMS_SENTENCE, parsePriceLiveAt, PRICE_LIVE_SETTING, priceLabel, REFUND_RULE, TRIAL_DAYS } from "@/lib/billing";
 import { BILLING_EMAIL, HELLO_EMAIL, mailto } from "@/lib/contacts";
 import { billingConfigured } from "@/lib/entitlements";
 import { ADVISOR_NAME } from "@/lib/planner/advisor";
@@ -22,7 +22,7 @@ async function priceIsLive(): Promise<boolean> {
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Everything on Quad is free except ${ADVISOR_NAME}: ${priceLabel("student")} for one student or ${priceLabel("family")} for a family, after a ${TRIAL_DAYS}-day free trial. Counselors use Quad free.`,
+  description: `Everything on Quad is free except ${ADVISOR_NAME}: ${priceLabel("student")} per student after a ${TRIAL_DAYS}-day free trial with no card needed. Parents and counselors use Quad free.`,
   alternates: { canonical: "/pricing" },
 };
 
@@ -49,17 +49,21 @@ export default async function PricingPage() {
       <header className="max-w-3xl">
         <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">Pricing</h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Everything on Quad is free. {ADVISOR_NAME}, built on your record, is the one thing that costs money: {priceLabel("student")} for one student, or {priceLabel("family")} for the whole family, after {TRIAL_DAYS} days free.
+          Everything on Quad is free. {ADVISOR_NAME}, built on your record, is the one thing that costs money: {priceLabel("student")} per student, after {TRIAL_DAYS} days free with no card needed. Parents and counselors pay nothing for their own accounts.
         </p>
         {!live && <p className="mt-3 rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground">While Quad is in preview, the advisor is free for every account. These are the prices to come; accounts made before they go live keep the advisor free through the end of this application cycle.</p>}
       </header>
 
       <section aria-labelledby="pricing-cards" className="grid gap-4 sm:grid-cols-2">
         <h2 id="pricing-cards" className="sr-only">
-          Plans
+          The price
         </h2>
-        <PriceCard title="Advisor, one student" price={priceLabel("student")} lines={["One student's advisor through senior year", `Bought by a parent, or by the student at ${SELF_PAY_AGE} or older`, `${TRIAL_DAYS} days free, card on file`]} href={startHref} live={live} />
-        <PriceCard title="Advisor, family" price={priceLabel("family")} lines={["Every student in the guardian's households, now and added later", "Parents see the same advisor the student does", `${TRIAL_DAYS} days free, card on file`]} href={startHref} live={live} />
+        <PriceCard title={ADVISOR_NAME} price={priceLabel("student")} lines={["One student's advisor through senior year, per student", "Paid by the student, or by a parent with one card for the household", `${TRIAL_DAYS} days free from the day the student is added, no card needed`]} href={startHref} live={live} />
+        <div className="flex flex-col justify-center rounded-3xl border bg-muted/30 p-6 text-sm text-muted-foreground">
+          <h3 className="font-display text-xl font-bold text-foreground">Parents and counselors: free</h3>
+          <p className="mt-2">A parent&apos;s account, the household, and everything a parent sees of a student&apos;s advisor cost nothing. The student&apos;s advisor is what&apos;s paid for, once, whoever pays.</p>
+          <p className="mt-2">Counselors and consultants run their caseload on Quad free.</p>
+        </div>
       </section>
 
       <section aria-labelledby="pricing-free">
@@ -125,9 +129,10 @@ export default async function PricingPage() {
           Questions
         </h2>
         <dl className="mt-4 space-y-4 text-sm">
-          <QA q="How does the trial work?" a={`${TRIAL_DAYS} days, the whole advisor, with a card on file. Cancel any time before it ends and nothing is charged. Afterwards the yearly price is charged and the advisor carries on. One trial per student.`} />
+          <QA q="How does the trial work?" a={`${TRIAL_DAYS} days, the whole advisor, from the day a student's record is made, with no card. Add a card during the trial and the year starts when it ends, without a gap; do nothing and nothing is charged. One trial per student.`} />
+          <QA q="Who pays?" a={`Either the student or a parent. A parent keeps one card for the household and pays ${priceLabel("student")} for each student they add. A student can start their own trial and pay for their own advisor.`} />
           <QA q="Refunds" a={REFUND_RULE} />
-          <QA q="Minors" a={`Students ${SELF_PAY_AGE} and older may start a trial with their own card; under 18, a purchase is made with a guardian's permission, as the Terms say, and the checkout asks the student to confirm it. Under ${SELF_PAY_AGE}, a parent starts the trial from their own account.`} />
+          <QA q="Minors" a={`A student of any age may start their own trial. ${MINOR_TERMS_SENTENCE}`} />
           <QA q="What happens when a subscription lapses?" a="The advisor turns read-only: the list, its levels, the calendar, and the offers stay visible; the guides, the changes, the texts, and the alerts stop. Nothing is deleted. Subscribing again restores everything." />
           <QA q="Can I cancel any time?" a="Yes, from your account page or the billing portal. A cancelled trial runs to its end; a cancelled year runs to its renewal date, then turns read-only." />
           <QA q="Prices and offers" a="Prices may differ by offer, and the price shown at checkout is the one charged; the price you start at is the price you renew at. A yearly renewal reminder comes two weeks before." />

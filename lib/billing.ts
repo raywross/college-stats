@@ -1,52 +1,53 @@
 /**
  * Quad Advisor's commercial rules (specs/product/commercialization.md; specs/product/advisor.md "2. The trial";
- * specs/product/open-doors.md "Early accounts"): the two products and their list prices, the feature map the
- * entitlement hook reads from, what a set of subscription rows means for one student, who is an early account, and
- * the sentences the checkout, the account page, and the Advisor tab say about it. Pure: no I/O, no Stripe, so
- * tests/billing.test.mts runs every rule under plain `node --test` and the server glue (lib/entitlements.ts,
- * lib/stripe.ts) stays thin.
+ * specs/product/open-doors.md "Early accounts"), as redrawn on the owner's decisions of 2026-11-14: one price, $20 a
+ * year per student; a 14-day trial that starts the moment a student record exists, with no card; parents and
+ * counselors free. The feature map the entitlement hook reads from, what a student's trial and subscriptions mean,
+ * who is an early account, and the sentences the checkout, the account page, and the Advisor tab say. Pure: no I/O,
+ * no Stripe, so tests/billing.test.mts runs every rule under plain `node --test` and the server glue
+ * (lib/entitlements.ts, lib/stripe.ts, lib/billing-server.ts) stays thin.
  *
  * What is never here: a weight, a threshold, or a rule of Quad's estimate (that is specs/chances/); a card number or
- * any payment detail (Stripe holds those; the app only ever sees ids and statuses).
+ * any payment detail (Stripe holds those; the app only ever sees ids, a brand, and the last four digits).
  */
 import type { Capability } from "./planner/types.ts";
 
 /* ------------------------------------------------------------------ */
-/* Products and prices                                                 */
+/* The product and its price                                           */
 /* ------------------------------------------------------------------ */
 
-/** The two yearly products (commercialization.md "Prices"): one student, or every student in a guardian's households. */
-export type Product = "student" | "family";
-export const PRODUCTS: readonly Product[] = ["student", "family"];
+/** One product: the advisor for one student, a year at a time (owner, 2026-11-14: "each student is $20"). */
+export type Product = "student";
+export const PRODUCTS: readonly Product[] = ["student"];
 
 export function isProduct(v: unknown): v is Product {
-  return v === "student" || v === "family";
+  return v === "student";
 }
 
-/** The list prices, in whole dollars a year (owner, 2026-10-26). A price test's variants are never below these. */
-export const LIST_PRICES: Record<Product, number> = { student: 20, family: 30 };
+/** The list price, in whole dollars a year. A price test's variants are never below it. */
+export const LIST_PRICES: Record<Product, number> = { student: 20 };
 
 /**
- * Price variants (commercialization.md "Price tests"): a key a campaign link carries, resolving to a yearly price per
- * product. Only the list price exists until the Growth console issues campaign codes; each later variant is one Stripe
- * Price on the same two Products, named here, so the checkout, the webhooks, and the entitlements don't change.
+ * Price variants (commercialization.md "Price tests"): a key a campaign link carries, resolving to a yearly price.
+ * Only the list price exists until the Growth console issues campaign codes; each later variant is one Stripe Price
+ * on the same Product, named here, so the checkout, the webhooks, and the entitlements don't change.
  */
 export const PRICE_VARIANTS: Record<string, Record<Product, number>> = { list: LIST_PRICES };
 export const LIST_VARIANT = "list";
 
-/** The yearly price for a product under a variant; an unknown variant is the list price (never a surprise). */
-export function priceFor(product: Product, variant: string | null | undefined = LIST_VARIANT): { variant: string; dollars: number } {
+/** The yearly price under a variant; an unknown variant is the list price (never a surprise). */
+export function priceFor(product: Product = "student", variant: string | null | undefined = LIST_VARIANT): { variant: string; dollars: number } {
   const key = variant && PRICE_VARIANTS[variant] ? variant : LIST_VARIANT;
   return { variant: key, dollars: PRICE_VARIANTS[key][product] };
 }
 
-export const PRODUCT_LABEL: Record<Product, string> = { student: "Advisor, one student", family: "Advisor, family" };
+export const PRODUCT_LABEL: Record<Product, string> = { student: "Quad Advisor" };
 
-/** "$20" (whole dollars; the prices are whole). */
+/** "$20" (whole dollars; the price is whole). */
 export const dollars = (n: number) => `$${n}`;
 
-/** "$20 a year" / "$30 a year". */
-export function priceLabel(product: Product, variant?: string | null): string {
+/** "$20 a year". */
+export function priceLabel(product: Product = "student", variant?: string | null): string {
   return `${dollars(priceFor(product, variant).dollars)} a year`;
 }
 
@@ -54,40 +55,45 @@ export function priceLabel(product: Product, variant?: string | null): string {
 /* The trial                                                           */
 /* ------------------------------------------------------------------ */
 
-/** Owner's rule (2026-10-26): 14 days free, card up front, annual only. */
+/** Owner's rule: 14 days free from the day the student's record is made; annual after. */
 export const TRIAL_DAYS = 14;
 
-/** A student may start their own trial at this age (owner, 2026-10-26: "fine to allow students 16 and older to pay with a card"). */
-export const SELF_PAY_AGE = 16;
-/** Under this age the checkout asks the student to confirm a parent's permission (the Terms say a minor buys with one). */
-export const ADULT_AGE = 18;
-
 /**
- * The age a birth year implies on `today`, counted the way lib/accounts.ts counts (someone born in Y turns N in Y+N;
- * with only a year, the birthday is taken as already passed). Null without a year.
+ * The Terms' sentence about minors (commercialization.md "Minors paying"): any student may start their own trial and
+ * pay (owner, 2026-11-14: "they shouldn't need a parent"); under 18 the purchase is made with a guardian's permission.
  */
-export function ageFrom(birthYear: number | null | undefined, today: Date = new Date()): number | null {
-  if (birthYear === null || birthYear === undefined || !Number.isFinite(birthYear)) return null;
-  return today.getUTCFullYear() - birthYear;
+export const MINOR_TERMS_SENTENCE = "Under 18, a purchase is made with a parent or guardian's permission, as the Terms say.";
+
+/** One row of public.advisor_trials: the trial the database started when the student's record was made. */
+export interface TrialRow {
+  student_id: string;
+  started_at: string;
+  ends_at: string;
+  source: "student" | "guardian" | "counselor" | "system";
+  reminder_sent_at: string | null;
 }
 
-/**
- * Who may start a trial from their own account (advisor.md "Who can start one"): a guardian, or a student 16 or
- * older. A student under 16 asks a parent; a student with no birth year on file is asked for one first.
- */
-export type StarterRule = { ok: true; confirmPermission: boolean } | { ok: false; reason: "under-age" | "no-birth-year" };
-
-export function starterRule(input: { isGuardian: boolean; birthYear: number | null }, today: Date = new Date()): StarterRule {
-  if (input.isGuardian) return { ok: true, confirmPermission: false };
-  const age = ageFrom(input.birthYear, today);
-  if (age === null) return { ok: false, reason: "no-birth-year" };
-  if (age < SELF_PAY_AGE) return { ok: false, reason: "under-age" };
-  return { ok: true, confirmPermission: age < ADULT_AGE };
+/** Whether a trial is still running on `today`. */
+export function trialRunning(trial: Pick<TrialRow, "ends_at"> | null | undefined, today: Date = new Date()): boolean {
+  return Boolean(trial && new Date(trial.ends_at).getTime() > today.getTime());
 }
 
 /** The day a trial started on `start` ends (14 days on). */
 export function trialEndFrom(start: Date): Date {
   return new Date(start.getTime() + TRIAL_DAYS * 86_400_000);
+}
+
+/**
+ * Stripe's `trial_end` for a subscription that should start charging when the student's trial ends: the trial's end
+ * as unix seconds when it is far enough ahead (Checkout needs at least 48 hours), else null, meaning charge now.
+ */
+export const STRIPE_TRIAL_MIN_MS = 48 * 3_600_000 + 5 * 60_000;
+
+export function stripeTrialEnd(trialEnd: string | Date | null | undefined, today: Date = new Date()): number | null {
+  if (!trialEnd) return null;
+  const end = typeof trialEnd === "string" ? new Date(trialEnd) : trialEnd;
+  if (Number.isNaN(end.getTime()) || end.getTime() - today.getTime() < STRIPE_TRIAL_MIN_MS) return null;
+  return Math.floor(end.getTime() / 1000);
 }
 
 /** "Nov 28", or "Nov 28, 2027" when the year isn't today's. */
@@ -98,9 +104,14 @@ export function shortDay(iso: string | Date, today: Date = new Date(), timeZone 
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }), timeZone }).format(d);
 }
 
-/** The checkout's sentence, in Quad's words above Stripe's (advisor.md "2. The trial"). */
-export function checkoutSentence(product: Product, trialEnd: Date, variant?: string | null, today: Date = new Date()): string {
-  return `Free for ${TRIAL_DAYS} days. Cancel any time before ${shortDay(trialEnd, today)} and you won't be charged. After that, ${priceLabel(product, variant)}.`;
+/**
+ * The checkout's sentence, in Quad's words above Stripe's: with a trial still running, nothing is charged until it
+ * ends; after it, the year starts today.
+ */
+export function checkoutSentence(trialEnd: string | Date | null, variant?: string | null, today: Date = new Date()): string {
+  const stripeEnd = stripeTrialEnd(trialEnd, today);
+  if (stripeEnd !== null) return `Free until ${shortDay(trialEnd!, today)}. Cancel any time before then and you won't be charged. After that, ${priceLabel("student", variant)}.`;
+  return `${priceLabel("student", variant)}, starting today. Cancel any time; the advisor stays whole until the year ends.`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -156,6 +167,7 @@ export function isSubscriptionStatus(v: unknown): v is SubscriptionStatus {
 /** One row of public.subscriptions (supabase/migrations/20261114120000_subscriptions.sql), as the app reads it. */
 export interface SubscriptionRow {
   id: string;
+  /** The payer: the student, or a guardian paying for them. */
   user_id: string;
   product: Product;
   status: SubscriptionStatus;
@@ -163,59 +175,48 @@ export interface SubscriptionRow {
   stripe_subscription_id: string;
   price_id: string | null;
   price_variant: string;
+  /** Stripe's trial end: the student's trial end when the subscription was made during it. */
   trial_end: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   canceled_at: string | null;
-  /** A student plan: the one student it covers. Null on a family plan (every student in the buyer's households). */
+  /** The one student this subscription pays for. */
   covers_student_id: string | null;
-  /** Every student this subscription's trial has covered, for "one trial per student". */
+  /** Kept from the first design; the trial itself is now `advisor_trials`. */
   covered_student_ids: string[];
   reminder_sent_at: string | null;
   created: string;
   updated: string;
 }
 
-/** Statuses under which the advisor is whole: the trial, a paid year, and the retry window after a failed charge. */
+/** Statuses under which a subscription keeps the advisor whole: Stripe's trial, a paid year, and the retry window after a failed charge. */
 export const WHOLE_STATUSES: readonly SubscriptionStatus[] = ["trialing", "active", "past_due"];
 
-/**
- * A student's advisor status from the subscriptions that cover them: the best live one wins (a paid year over a
- * trial), then a lapsed one, then none. `incomplete` (a checkout that never finished) counts as none.
- */
-export type StatusWord = "trial" | "active" | "none" | "lapsed";
-
-export function statusFrom(rows: readonly Pick<SubscriptionRow, "status">[]): StatusWord {
-  const statuses = new Set(rows.map((r) => r.status));
-  if (statuses.has("active") || statuses.has("past_due")) return "active";
-  if (statuses.has("trialing")) return "trial";
-  if (statuses.has("canceled") || statuses.has("unpaid") || statuses.has("incomplete_expired") || statuses.has("paused")) return "lapsed";
-  return "none";
+export function subscriptionLive(row: Pick<SubscriptionRow, "status">): boolean {
+  return (WHOLE_STATUSES as readonly string[]).includes(row.status);
 }
 
 /** The row that decides a student's status (the live one, else the most recently updated), or null. */
 export function decidingRow<R extends Pick<SubscriptionRow, "status" | "updated">>(rows: readonly R[]): R | null {
-  const live = rows.filter((r) => (WHOLE_STATUSES as readonly string[]).includes(r.status));
+  const live = rows.filter(subscriptionLive);
   const pool = live.length ? live : rows;
   return [...pool].sort((a, b) => b.updated.localeCompare(a.updated))[0] ?? null;
 }
 
 /**
- * A student's advisor status, the one fact about money a counselor sees (specs/product/counselor-portal.md "The
- * caseload", "The channel"): a quiet chip on the caseload row, never a price. "preview" for everyone until billing
- * ships (the price not live); then Advisor, Trial, Not yet, or Lapsed. An early account reads "Advisor": the guides
- * open for them. Here, not in lib/entitlements.ts, because client components import the caseload module.
+ * A student's advisor status from their trial and the subscriptions that pay for them: a paid year first; then a
+ * trial (Stripe's or the database's); then lapsed (a trial that ended, or a subscription that did); then none, which
+ * is a record from before the trials table with nothing on it.
  */
-export type AdvisorStatus = "preview" | "trial" | "active" | "none" | "lapsed";
+export type StatusWord = "trial" | "active" | "none" | "lapsed";
 
-/** The chip's words. */
-export const ADVISOR_STATUS_LABEL: Record<AdvisorStatus, string> = {
-  preview: "Preview",
-  trial: "Trial",
-  active: "Advisor",
-  none: "Not yet",
-  lapsed: "Lapsed",
-};
+export function statusFrom(rows: readonly Pick<SubscriptionRow, "status">[], trial: Pick<TrialRow, "ends_at"> | null | undefined, today: Date = new Date()): StatusWord {
+  const statuses = new Set(rows.map((r) => r.status));
+  if (statuses.has("active") || statuses.has("past_due")) return "active";
+  if (statuses.has("trialing") || trialRunning(trial, today)) return "trial";
+  if (trial || statuses.has("canceled") || statuses.has("unpaid") || statuses.has("incomplete_expired") || statuses.has("paused")) return "lapsed";
+  return "none";
+}
 
 /* ------------------------------------------------------------------ */
 /* Entitlements                                                        */
@@ -226,10 +227,13 @@ export interface Entitlement {
   status: StatusWord;
   /** Every capability in the map, writes included. False: the free rows and the read-only plan. */
   whole: boolean;
-  /** Why it's whole: the price isn't live, the account is early, or a subscription covers the student. */
-  because: "not-live" | "early" | "subscription" | null;
-  /** The subscription behind `status`, when one covers the student. */
+  /** Why it's whole: the price isn't live, the account is early, the trial is running, or a subscription pays. */
+  because: "not-live" | "early" | "trial" | "subscription" | null;
+  /** The subscription behind `status`, when one pays for the student. */
   row: SubscriptionRow | null;
+  trial: TrialRow | null;
+  /** A live subscription exists, so a card is on file and the year will be charged: the trial needs nothing more. */
+  paid: boolean;
 }
 
 export interface EntitlementInput {
@@ -240,17 +244,21 @@ export interface EntitlementInput {
   /** When the accounts behind the student were created (the student's own, or their manager's): any early one counts. */
   accountsCreated: readonly (string | null)[];
   rows: readonly SubscriptionRow[];
+  trial: TrialRow | null;
   today?: Date;
 }
 
 export function entitlementFrom(input: EntitlementInput): Entitlement {
   const today = input.today ?? new Date();
-  const status = statusFrom(input.rows);
+  const status = statusFrom(input.rows, input.trial, today);
   const row = decidingRow(input.rows);
-  if (!input.stripeConfigured || input.priceLiveAt === null) return { status, whole: true, because: "not-live", row };
-  if (status === "trial" || status === "active") return { status, whole: true, because: "subscription", row };
-  if (earlyFreeRunning(today) && input.accountsCreated.some((c) => isEarly(c, input.priceLiveAt))) return { status, whole: true, because: "early", row };
-  return { status, whole: false, because: null, row };
+  const paid = input.rows.some(subscriptionLive);
+  const base = { status, row, trial: input.trial, paid };
+  if (!input.stripeConfigured || input.priceLiveAt === null) return { ...base, whole: true, because: "not-live" };
+  if (paid) return { ...base, whole: true, because: "subscription" };
+  if (trialRunning(input.trial, today)) return { ...base, whole: true, because: "trial" };
+  if (earlyFreeRunning(today) && input.accountsCreated.some((c) => isEarly(c, input.priceLiveAt))) return { ...base, whole: true, because: "early" };
+  return { ...base, whole: false, because: null };
 }
 
 /**
@@ -302,6 +310,23 @@ export function allowedUnder(entitlement: Pick<Entitlement, "whole">, capability
   return mode === "read" && row.readWhenLapsed;
 }
 
+/**
+ * A student's advisor status, the one fact about money a counselor sees (specs/product/counselor-portal.md "The
+ * caseload", "The channel"): a quiet chip on the caseload row, never a price. "preview" for everyone until billing
+ * ships (the price not live); then Advisor, Trial, Not yet, or Lapsed. An early account reads "Advisor": the guides
+ * open for them. Here, not in lib/entitlements.ts, because client components import the caseload module.
+ */
+export type AdvisorStatus = "preview" | "trial" | "active" | "none" | "lapsed";
+
+/** The chip's words. */
+export const ADVISOR_STATUS_LABEL: Record<AdvisorStatus, string> = {
+  preview: "Preview",
+  trial: "Trial",
+  active: "Advisor",
+  none: "Not yet",
+  lapsed: "Lapsed",
+};
+
 /* ------------------------------------------------------------------ */
 /* Webhooks: what changed                                              */
 /* ------------------------------------------------------------------ */
@@ -314,7 +339,8 @@ type Transition = Pick<SubscriptionRow, "status" | "current_period_end" | "cance
 /**
  * The events to send when a subscription's stored row goes from `prev` (null: first seen) to `next`. Pure, so the
  * webhook and the nightly reconcile say the same things and tests can list them. A cancel-at-period-end during the
- * trial is the cancellation (the family keeps the 14 days); a later resume isn't an event.
+ * trial is the cancellation (the family keeps the 14 days); a later resume isn't an event. `trial_started` here means
+ * a card arrived during the trial; the trial itself started with the student's record.
  */
 export function billingEvents(prev: Transition | null, next: Transition): BillingEvent[] {
   const out: BillingEvent[] = [];
@@ -354,17 +380,17 @@ export function trialEndsLine(trialEnd: string, today: Date = new Date()): strin
 /** The read-only banner's first sentence, by how the plan got there. */
 export function lapsedLine(status: StatusWord, firstName: string | null): string {
   const whose = firstName ? `${firstName}'s advisor` : "Your advisor";
-  if (status === "lapsed") return `${whose} is read-only: the list, its levels, the calendar, and the offers stay; the guides and changes wait for a subscription.`;
-  return `${whose} is read-only until a trial starts: the list, its levels, the calendar, and the offers stay; the guides and changes come with it.`;
+  if (status === "lapsed") return `${whose} is read-only: the list, its levels, the calendar, and the offers stay; the guides and changes come back with a subscription.`;
+  return `${whose} is read-only: the list, its levels, the calendar, and the offers stay; the guides and changes come with a subscription.`;
 }
 
-/** The splash page's and the pricing page's price line once the trial is live. */
+/** The splash page's and the pricing page's price line once the price is live. */
 export function trialPriceLine(variant?: string | null): string {
-  return `${priceLabel("student", variant)} after, or ${dollars(priceFor("family", variant).dollars)} for the whole family. Cancel before the trial ends and pay nothing.`;
+  return `${TRIAL_DAYS} days free, no card needed. ${priceLabel("student", variant)} after.`;
 }
 
-/** The splash page's button once the trial is live. */
+/** The splash page's button once the price is live. */
 export const TRIAL_CTA = `Start your ${TRIAL_DAYS}-day free trial`;
 
 /** The refund rule, stated on the pricing page (commercialization.md "Billing"). */
-export const REFUND_RULE = `The trial is the refund policy: ${TRIAL_DAYS} days free with your card on file, and nothing is charged if you cancel before it ends. After a charge, a refund within ${TRIAL_DAYS} days on request if the list has fewer than three colleges and no guide was completed.`;
+export const REFUND_RULE = `The trial is the refund policy: ${TRIAL_DAYS} days free, with nothing to cancel. After a charge, a refund within ${TRIAL_DAYS} days on request if the list has fewer than three colleges and no guide was completed.`;

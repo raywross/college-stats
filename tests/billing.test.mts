@@ -1,11 +1,10 @@
 /**
- * Quad Advisor's billing rules (lib/billing.ts; specs/product/commercialization.md "Files": every capability a spec
- * names appears in the map; the free column matches what is live except the plan; a family plan covers a student
- * added later and a student plan doesn't extend to a sibling, both as the SQL function's rule; a lapsed plan is
- * read-only, never emptied), who may start a trial (specs/product/advisor.md "2. The trial"), early accounts
- * (specs/product/open-doors.md), what a change in a subscription means for telemetry, the Stripe mapping
- * (lib/stripe.ts rowFromStripe), the reminder email, and the entitlement glue's unconfigured path. No network,
- * no database. `npm test`.
+ * Quad Advisor's billing rules (lib/billing.ts; specs/product/commercialization.md "Files"): one price, $20 a student
+ * a year; the trial that starts with the student's record and needs no card; what a student's trial and subscriptions
+ * mean; every capability a spec names appears in the map; the free column matches what is live except the plan; a
+ * lapsed plan is read-only, never emptied; early accounts (specs/product/open-doors.md); what a change in a
+ * subscription means for telemetry; the Stripe mapping's rules and the SQL's; the trial email in both forms; and the
+ * entitlement glue's unconfigured path. No network, no database. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -23,13 +22,16 @@ import {
   parsePriceLiveAt,
   priceFor,
   priceLabel,
-  starterRule,
+  PRODUCTS,
   statusFrom,
+  stripeTrialEnd,
   trialDay,
   trialEndFrom,
   trialEndsLine,
   trialPriceLine,
+  trialRunning,
   type SubscriptionRow,
+  type TrialRow,
 } from "../lib/billing.ts";
 import { buildTrialEnding, coveredLine } from "../lib/emails/trial-ending.ts";
 import { ADVISOR_STATUS_LABEL, advisorStatusFor, allowed, CAPABILITIES } from "../lib/entitlements.ts";
@@ -63,35 +65,36 @@ function row(over: Partial<SubscriptionRow> = {}): SubscriptionRow {
   };
 }
 
+function trial(over: Partial<TrialRow> = {}): TrialRow {
+  return { student_id: "st1", started_at: "2026-11-14T12:00:00Z", ends_at: "2026-11-28T12:00:00Z", source: "student", reminder_sent_at: null, ...over };
+}
+
 /* ------------------------------------------------------------------ */
-/* Prices and words                                                    */
+/* The price and the words                                             */
 /* ------------------------------------------------------------------ */
 
-test("the two list prices are the owner's: $20 a year for a student, $30 for a family; an unknown variant falls back to them", () => {
-  assert.deepEqual(LIST_PRICES, { student: 20, family: 30 });
+test("one product at the owner's price: $20 a year per student; an unknown variant falls back to it", () => {
+  assert.deepEqual(PRODUCTS, ["student"]);
+  assert.deepEqual(LIST_PRICES, { student: 20 });
   assert.equal(priceLabel("student"), "$20 a year");
-  assert.equal(priceLabel("family"), "$30 a year");
   assert.deepEqual(priceFor("student", "nonsense"), { variant: "list", dollars: 20 });
-  assert.equal(trialPriceLine(), "$20 a year after, or $30 for the whole family. Cancel before the trial ends and pay nothing.");
+  assert.equal(trialPriceLine(), "14 days free, no card needed. $20 a year after.");
 });
 
-test("the checkout sentence and the trial lines say the date and the price in Quad's words", () => {
+test("the checkout sentence waits for a trial still two days or more ahead, else says the year starts today", () => {
   const end = trialEndFrom(TODAY);
-  assert.equal(checkoutSentence("student", end, null, TODAY), "Free for 14 days. Cancel any time before Nov 28 and you won't be charged. After that, $20 a year.");
+  assert.equal(checkoutSentence(end, null, TODAY), "Free until Nov 28. Cancel any time before then and you won't be charged. After that, $20 a year.");
+  assert.equal(checkoutSentence(new Date("2026-11-15T12:00:00Z"), null, TODAY), "$20 a year, starting today. Cancel any time; the advisor stays whole until the year ends.");
+  assert.equal(checkoutSentence(null, null, TODAY), "$20 a year, starting today. Cancel any time; the advisor stays whole until the year ends.");
   assert.equal(trialEndsLine("2026-11-28T12:00:00Z", TODAY), "Trial ends Nov 28");
   assert.equal(trialEndsLine("2027-01-02T12:00:00Z", TODAY), "Trial ends Jan 2, 2027");
 });
 
-/* ------------------------------------------------------------------ */
-/* Who may start                                                       */
-/* ------------------------------------------------------------------ */
-
-test("a guardian may start; a student at 16 or 17 confirms a parent's permission; at 18 nothing to confirm; under 16 asks a parent", () => {
-  assert.deepEqual(starterRule({ isGuardian: true, birthYear: null }, TODAY), { ok: true, confirmPermission: false });
-  assert.deepEqual(starterRule({ isGuardian: false, birthYear: 2010 }, TODAY), { ok: true, confirmPermission: true });
-  assert.deepEqual(starterRule({ isGuardian: false, birthYear: 2008 }, TODAY), { ok: true, confirmPermission: false });
-  assert.deepEqual(starterRule({ isGuardian: false, birthYear: 2011 }, TODAY), { ok: false, reason: "under-age" });
-  assert.deepEqual(starterRule({ isGuardian: false, birthYear: null }, TODAY), { ok: false, reason: "no-birth-year" });
+test("stripeTrialEnd: unix seconds for an end at least 48 hours ahead, null closer or past (Checkout's minimum)", () => {
+  assert.equal(stripeTrialEnd("2026-11-28T12:00:00Z", TODAY), Math.floor(new Date("2026-11-28T12:00:00Z").getTime() / 1000));
+  assert.equal(stripeTrialEnd("2026-11-16T12:00:00Z", TODAY), null);
+  assert.equal(stripeTrialEnd("2026-11-01T12:00:00Z", TODAY), null);
+  assert.equal(stripeTrialEnd(null, TODAY), null);
 });
 
 /* ------------------------------------------------------------------ */
@@ -113,28 +116,37 @@ test("isEarly: everyone while the setting is unset; created before the moment af
 /* Statuses and entitlements                                           */
 /* ------------------------------------------------------------------ */
 
-test("statusFrom: a paid year beats a trial, a trial beats lapsed, incomplete counts as none", () => {
-  assert.equal(statusFrom([]), "none");
-  assert.equal(statusFrom([row({ status: "incomplete" })]), "none");
-  assert.equal(statusFrom([row({ status: "canceled" })]), "lapsed");
-  assert.equal(statusFrom([row({ status: "canceled" }), row({ status: "trialing" })]), "trial");
-  assert.equal(statusFrom([row({ status: "trialing" }), row({ status: "active" })]), "active");
-  assert.equal(statusFrom([row({ status: "past_due" })]), "active", "Stripe's retry window keeps the advisor whole");
+test("statusFrom: a paid year beats a trial; the database's trial counts as a trial; an ended trial with nothing paying is lapsed; no trial and no rows is none", () => {
+  assert.equal(statusFrom([], null, TODAY), "none");
+  assert.equal(statusFrom([], trial(), TODAY), "trial");
+  assert.equal(statusFrom([], trial({ ends_at: "2026-11-10T00:00:00Z" }), TODAY), "lapsed");
+  assert.equal(statusFrom([row({ status: "incomplete" })], null, TODAY), "none");
+  assert.equal(statusFrom([row({ status: "canceled" })], null, TODAY), "lapsed");
+  assert.equal(statusFrom([row({ status: "canceled" }), row({ status: "trialing" })], null, TODAY), "trial");
+  assert.equal(statusFrom([row({ status: "trialing" }), row({ status: "active" })], null, TODAY), "active");
+  assert.equal(statusFrom([row({ status: "past_due" })], null, TODAY), "active", "Stripe's retry window keeps the advisor whole");
+  assert.equal(trialRunning(trial(), TODAY), true);
+  assert.equal(trialRunning(trial({ ends_at: "2026-11-14T11:00:00Z" }), TODAY), false);
   assert.equal(decidingRow([row({ status: "canceled", updated: "2026-11-15T00:00:00Z" }), row({ id: "live", status: "trialing", updated: "2026-11-01T00:00:00Z" })])!.id, "live");
 });
 
-test("entitlementFrom: whole while the price isn't live or Stripe is unset; whole on a trial or a year; early accounts whole through 2027-08-31; else read-only", () => {
+test("entitlementFrom: whole while the price isn't live or Stripe is unset; whole on a trial, a year, or an early account through 2027-08-31; else read-only", () => {
   const live = new Date("2026-12-01T00:00:00Z");
-  const base = { stripeConfigured: true, accountsCreated: ["2027-01-01T00:00:00Z"], rows: [] as SubscriptionRow[], today: new Date("2027-01-15T00:00:00Z") };
+  const later = new Date("2027-01-15T00:00:00Z");
+  const base = { stripeConfigured: true, accountsCreated: ["2027-01-01T00:00:00Z"], rows: [] as SubscriptionRow[], trial: null as TrialRow | null, today: later };
   assert.equal(entitlementFrom({ ...base, priceLiveAt: null }).because, "not-live");
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, stripeConfigured: false }).because, "not-live");
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live }).whole, false);
-  assert.equal(entitlementFrom({ ...base, priceLiveAt: live, rows: [row()] }).because, "subscription");
+  const running = entitlementFrom({ ...base, priceLiveAt: live, trial: trial({ ends_at: "2027-01-20T00:00:00Z" }) });
+  assert.equal(running.because, "trial");
+  assert.equal(running.paid, false, "a card is not on file yet");
+  const paying = entitlementFrom({ ...base, priceLiveAt: live, trial: trial({ ends_at: "2027-01-20T00:00:00Z" }), rows: [row({ trial_end: "2027-01-20T00:00:00Z" })] });
+  assert.equal(paying.because, "subscription");
+  assert.equal(paying.paid, true);
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, rows: [row({ status: "active" })] }).whole, true);
-  const early = entitlementFrom({ ...base, priceLiveAt: live, accountsCreated: ["2026-11-01T00:00:00Z"] });
-  assert.equal(early.because, "early");
+  assert.equal(entitlementFrom({ ...base, priceLiveAt: live, accountsCreated: ["2026-11-01T00:00:00Z"] }).because, "early");
   assert.equal(entitlementFrom({ ...base, priceLiveAt: live, accountsCreated: ["2026-11-01T00:00:00Z"], today: new Date("2027-09-01T00:00:00Z") }).whole, false, "the early period ends");
-  const lapsed = entitlementFrom({ ...base, priceLiveAt: live, rows: [row({ status: "canceled" })] });
+  const lapsed = entitlementFrom({ ...base, priceLiveAt: live, trial: trial({ ends_at: "2027-01-01T00:00:00Z" }) });
   assert.equal(lapsed.status, "lapsed");
   assert.equal(lapsed.whole, false);
 });
@@ -152,21 +164,24 @@ test("the feature map: every capability the code names is a row; the free rows a
   assert.equal(allowedUnder(readOnly, "planner.reminders", "write"), false);
   assert.equal(allowedUnder(readOnly, "planner.actions.visits", "read"), false);
   assert.equal(allowedUnder({ whole: true }, "planner.texts"), true);
-  // Every planner capability the Capability type names is in the map (the typecheck holds the other direction).
   const types = read("lib/planner/types.ts");
   for (const r of FEATURE_MAP) assert.match(types, new RegExp(`"${r.capability.replace(/\./g, "\\.")}"`), `${r.capability} is in the Capability type`);
 });
 
-test("the SQL function's coverage rule is written as the spec says: a student plan names one student; a family plan reaches a guardian's households and managed records", () => {
-  const sql = read("supabase/migrations/20261114120000_subscriptions.sql");
-  assert.match(sql, /s\.product = 'student' and s\.covers_student_id = p_student/);
-  assert.match(sql, /s\.product = 'family'/);
-  assert.match(sql, /g\.role = 'guardian' and g\.status = 'active'/);
-  assert.match(sql, /st\.managed_by = s\.user_id/);
-  assert.match(sql, /can_read_student\(v_student\)/, "a caller reads only students they may see");
-  assert.match(sql, /'advisor\.price_live_at'/, "admin_set_setting learns the price-live key");
-  assert.match(sql, /subscriptions_read_own[\s\S]*is_admin\(\)/, "a person reads their own rows; an admin every row");
-  assert.doesNotMatch(sql, /create policy subscriptions_(insert|update|write)/, "no client writes: the server alone writes rows");
+test("the SQL says what the specs say: a trial for every new student record, the student plan alone, a counselor's parent invitation, and no client writes", () => {
+  const first = read("supabase/migrations/20261114120000_subscriptions.sql");
+  const second = read("supabase/migrations/20261114130000_billing_per_student.sql");
+  assert.match(second, /create trigger students_start_trial[\s\S]*after insert on public\.students/, "every new student starts a trial");
+  assert.match(second, /now\(\) \+ interval '14 days'/);
+  assert.match(second, /select s\.\* from public\.subscriptions s where s\.covers_student_id = p_student/, "the student plan is the only coverage rule");
+  assert.doesNotMatch(second.slice(second.indexOf("create or replace function public.subscriptions_covering")), /product = 'family'/);
+  assert.match(second, /create function public\.org_invite_guardian/);
+  assert.match(second, /raise exception 'not_on_caseload'/, "a counselor invites parents only for students on their caseload");
+  assert.match(second, /'''s household'/, "a new household is named after the student");
+  assert.match(second, /'trial', v_trial/, "advisor_access returns the trial");
+  assert.match(first, /can_read_student\(v_student\)/, "a caller reads only students they may see");
+  assert.match(first, /subscriptions_read_own[\s\S]*is_admin\(\)/, "a person reads their own rows; an admin every row");
+  for (const sql of [first, second]) assert.doesNotMatch(sql, /create policy (subscriptions|advisor_trials|billing_customers)_(insert|update|write)/, "no client writes");
 });
 
 /* ------------------------------------------------------------------ */
@@ -200,29 +215,33 @@ test("the billing events are registered as server events with the product and ne
 });
 
 /* ------------------------------------------------------------------ */
-/* The reminder                                                        */
+/* The email                                                           */
 /* ------------------------------------------------------------------ */
 
-test("the trial-ending email says the date, the amount, what the trial covered, one way to keep it and one to cancel", () => {
-  const built = buildTrialEnding({ firstName: "Sam", product: "family", priceVariant: "list", trialEnd: "2026-11-28T12:00:00Z", colleges: 7, movesDone: 2, studentNames: ["Jordan", "Maya"], siteUrl: "https://usequad.app", today: TODAY });
-  assert.equal(built.subject, "Your Quad Advisor trial ends Nov 28");
-  assert.match(built.text, /Hi Sam,/);
-  assert.match(built.text, /So far, your family's advisor has 7 colleges on the list and 2 moves done\./);
-  assert.match(built.text, /charged \$30 a year/);
-  assert.match(built.text, /https:\/\/usequad\.app\/account#advisor/);
-  assert.match(built.html, /Keep my advisor/);
-  assert.match(built.html, /Manage or cancel/);
-  assert.doesNotMatch(built.text, /\d{4} \d{4}/, "no card digits, ever");
+test("the trial-ending email: with a card, nothing to do and one way to cancel; without one, add a card or the advisor turns read-only with nothing charged", () => {
+  const base = { firstName: "Sam", priceVariant: "list", trialEnd: "2026-11-28T12:00:00Z", colleges: 7, movesDone: 2, studentNames: ["Jordan"], siteUrl: "https://usequad.app", today: TODAY };
+  const withCard = buildTrialEnding({ ...base, hasCard: true });
+  assert.equal(withCard.subject, "Your Quad Advisor trial ends Nov 28");
+  assert.match(withCard.text, /Hi Sam,/);
+  assert.match(withCard.text, /So far, Jordan's advisor has 7 colleges on the list and 2 moves done\./);
+  assert.match(withCard.text, /nothing to do: on Nov 28 your card is charged \$20 a year/);
+  assert.match(withCard.html, /Keep my advisor/);
+  const noCard = buildTrialEnding({ ...base, hasCard: false, studentNames: [] });
+  assert.match(noCard.text, /add a card before Nov 28/);
+  assert.match(noCard.text, /If you do nothing, nothing is charged: on Nov 28 your advisor turns read-only/);
+  assert.match(noCard.html, /Add a card/);
+  assert.match(noCard.text, /https:\/\/usequad\.app\/advisor\/start/);
+  for (const b of [withCard, noCard]) assert.doesNotMatch(b.text, /\d{4} \d{4}/, "no card digits, ever");
   assert.equal(coveredLine({ colleges: null, movesDone: null, studentNames: [] }), null);
   assert.equal(coveredLine({ colleges: 1, movesDone: 0, studentNames: ["Jordan"] }), "So far, Jordan's advisor has 1 college on the list.");
 });
 
 /* ------------------------------------------------------------------ */
-/* The glue, unconfigured                                              */
+/* The glue, unconfigured; the guards                                  */
 /* ------------------------------------------------------------------ */
 
 test("without Stripe's keys nothing is gated: allowed() says yes without a user or a read, and every student is in the preview", async () => {
-  for (const k of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_ADVISOR_STUDENT", "STRIPE_PRICE_ADVISOR_FAMILY"]) delete process.env[k];
+  for (const k of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_ADVISOR_STUDENT"]) delete process.env[k];
   assert.equal(await allowed(null, "planner.tab"), true);
   assert.equal(await allowed({ id: "u" }, "planner.texts"), true);
   assert.deepEqual(await advisorStatusFor(["a", "b"]), { a: "preview", b: "preview" });
@@ -234,13 +253,22 @@ test("the planner's settings read carries the price-live key, so a plan page pay
   assert.match(read("lib/entitlements.ts"), /appSettings\(\)/);
 });
 
-test("the jobs that are the advisor's filter by entitlement, and the webhook verifies the signature and records each event once", () => {
+test("the jobs that are the advisor's filter by entitlement; the webhook verifies the signature, records each event once, and saves a setup session's card; a parent needs a card before adding a student", () => {
   assert.match(read("app/api/cron/weekly/route.ts"), /entitledStudents\(client, .*"planner\.reminders"\)/);
   assert.match(read("app/api/cron/day-before/route.ts"), /entitledStudents\(client, .*"planner\.texts"\)/);
   const hook = read("app/api/stripe/webhook/route.ts");
   assert.match(hook, /webhookEvent\(raw, request\.headers\.get\("stripe-signature"\)\)/);
   assert.match(hook, /from\("stripe_events"\)\.insert/);
+  assert.match(hook, /session\.mode === "setup"/);
   assert.match(hook, /customer\.subscription\.trial_will_end/);
-  assert.match(read("lib/stripe.ts"), /trial_settings: \{ end_behavior: \{ missing_payment_method: "cancel" \} \}/);
-  assert.match(read("lib/stripe.ts"), /payment_method_collection: "always"/);
+  const stripe = read("lib/stripe.ts");
+  assert.match(stripe, /mode: "setup"/, "the household card is saved through a setup session");
+  assert.match(stripe, /payment_method_collection: "always"/);
+  assert.match(stripe, /missing_payment_method: "cancel"/);
+  assert.doesNotMatch(stripe, /trial_period_days/, "the trial is the database's; Stripe gets its end date, never a fresh 14 days");
+  const household = read("app/household/actions.ts");
+  assert.match(household, /cardOnFile\(/);
+  assert.match(household, /redirect\(`\$\{ADD_CARD_PATH\}\?next=/, "a parent with no card is sent to add one before the student is made");
+  assert.match(household, /payForStudent\(account\.user/, "the student is paid for once made");
+  assert.match(read("app/api/cron/subscriptions/route.ts"), /sendCardlessTrialReminder/, "cardless trials get their reminder from the reconcile");
 });

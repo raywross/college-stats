@@ -2,20 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { StartForm, type StartCard, type StartStudentOption } from "@/components/advisor/StartForm";
+import { StartForm, type StartStudentOption } from "@/components/advisor/StartForm";
 import { loginHref } from "@/lib/accounts";
-import { authConfigured } from "@/lib/auth";
-import { priceLabel, SELF_PAY_AGE, TRIAL_DAYS } from "@/lib/billing";
+import { authConfigured, getUser } from "@/lib/auth";
+import { MINOR_TERMS_SENTENCE, priceLabel, TRIAL_DAYS } from "@/lib/billing";
+import { billingService, cardOnFile } from "@/lib/billing-server";
 import { startOffer } from "@/lib/billing-start";
 import { ADVISOR_NAME } from "@/lib/planner/advisor";
 
-export const metadata: Metadata = { title: `Start ${ADVISOR_NAME}`, robots: { index: false } };
+export const metadata: Metadata = { title: `Keep ${ADVISOR_NAME}`, robots: { index: false } };
 
 /**
- * /advisor/start, the upgrade sheet (specs/product/advisor.md "The button's path"; commercialization.md "Gating UX"):
- * the two prices, the student a plan covers, and the way to Stripe Checkout. Signed out: the sign-up form, back here
- * after. A student under 16: "Ask a parent" (the household's invitation). A student with no birth year: add it first.
- * While the Advisor is free (billing not live) there is nothing to start, and the page says so.
+ * /advisor/start, the one sheet about money (specs/product/commercialization.md "Gating UX"): the price, the student the
+ * subscription pays for (a choice when a parent has several), and the way to Stripe Checkout, or a one-tap charge to the
+ * card already on file. Signed out: the sign-up form, back here after. While the Advisor is free (billing not live)
+ * there is nothing to start, and the page says so. Any student may pay for their own advisor (owner, 2026-11-14).
  */
 export default async function StartPage({ searchParams }: { searchParams: Promise<{ for?: string; cancelled?: string }> }) {
   await connection();
@@ -46,49 +47,28 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     );
   }
 
-  if (offer.rule && !offer.rule.ok) {
-    if (offer.rule.reason === "no-birth-year") {
-      return shell(
-        "One thing first",
-        <p className="text-muted-foreground">
-          Add your birth year on your account page, then come back: who can start a trial depends on it.{" "}
-          <Link href="/account#profile" className="font-semibold text-primary hover:underline">
-            Go to your account →
-          </Link>
-        </p>,
-      );
-    }
+  if (!offer.students.length) {
     return shell(
-      "Ask a parent to start your trial",
-      <div className="space-y-3 text-muted-foreground">
-        <p>
-          A parent or guardian starts the trial for a student under {SELF_PAY_AGE}. Invite one to your household and they can start it from their own account; your list and record stay yours either way.
-        </p>
-        <Link href="/household" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
-          Invite a parent from Household →
-        </Link>
-      </div>,
+      "No student yet",
+      <p className="text-muted-foreground">
+        Add a student from{" "}
+        <Link href="/household" className="font-semibold text-primary hover:underline">
+          Household
+        </Link>{" "}
+        first; their {TRIAL_DAYS}-day trial starts the moment they&apos;re added.
+      </p>,
     );
   }
 
+  const user = await getUser();
+  const card = user ? await cardOnFile(billingService(), user.id) : null;
+  const named = offer.students.some((s) => s.studentId === forParam);
   const students: StartStudentOption[] = offer.students
-    .filter((s) => !forParam || s.studentId === forParam || offer.students.every((x) => x.studentId !== forParam))
-    .map((s) => ({
-      studentId: s.studentId,
-      label: s.self ? "You" : (s.name ?? "A student"),
-      covered: s.billing.whole && s.billing.because === "subscription",
-      trialUsed: s.billing.trialUsed,
-    }));
-
-  const cards: StartCard[] = [
-    { product: "student", title: "One student", price: priceLabel("student"), lines: ["The whole advisor for one student, through senior year", "Started by a parent, or by the student at 16 or older", `${TRIAL_DAYS} days free, card on file`] },
-    ...(offer.familyOffered && !offer.familyHeld
-      ? [{ product: "family" as const, title: "Family", price: priceLabel("family"), lines: ["Every student in your households, now and added later", "Parents see the same advisor the student does", `${TRIAL_DAYS} days free, card on file`] }]
-      : []),
-  ];
+    .filter((s) => !named || s.studentId === forParam)
+    .map((s) => ({ studentId: s.studentId, label: s.self ? "You" : (s.name ?? "A student"), paid: s.billing.paid, trialEnd: s.billing.trialEnd }));
 
   return shell(
-    `Start ${ADVISOR_NAME}`,
+    `Keep ${ADVISOR_NAME}`,
     <>
       {cancelled === "1" && (
         <p role="status" className="rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground">
@@ -96,12 +76,14 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         </p>
       )}
       <p className="text-muted-foreground">
-        Annual only, so the advisor runs on the school year&apos;s rhythm. Everything else on Quad stays free.{" "}
+        {priceLabel("student")} per student, annual only, so the advisor runs on the school year&apos;s rhythm. A trial still running stays free to its last
+        day; the first charge comes when it ends. Everything else on Quad stays free.{" "}
         <Link href="/pricing" className="font-semibold text-primary hover:underline">
           What&apos;s free and what&apos;s paid →
         </Link>
       </p>
-      <StartForm cards={cards} students={students} confirmPermission={Boolean(offer.rule?.ok && offer.rule.confirmPermission)} trialDays={TRIAL_DAYS} />
+      <StartForm students={students} card={card ? { brand: card.brand, last4: card.last4 } : null} isGuardian={offer.isGuardian} />
+      <p className="text-xs text-muted-foreground">{MINOR_TERMS_SENTENCE} Payment is handled by Stripe; Quad never sees your card.</p>
     </>,
   );
 }

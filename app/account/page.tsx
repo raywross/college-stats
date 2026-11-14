@@ -104,7 +104,7 @@ export default async function AccountPage() {
         <HouseholdSummary households={households} />
       </AccountSection>
 
-      <AdvisorSection userId={user.id} />
+      <AdvisorSection userId={user.id} isGuardian={households.some((h) => h.me.guardian !== null)} />
 
       {guardians.length > 0 && (
         <AccountSection id="parents-can-edit" title="Parents can edit">
